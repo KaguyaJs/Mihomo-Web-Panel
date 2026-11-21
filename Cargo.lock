@@ -1286,7 +1286,7 @@ dependencies = [
  "ipnet",
  "libc",
  "mime_guess",
- "rand 0.9.5",
+ "rand 0.10.4",
  "reqwest",
  "rust-embed",
  "serde",
