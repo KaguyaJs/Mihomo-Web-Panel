@@ -1,0 +1,3 @@
+# Upstream license provenance
+
+- LICENSE: Shared workspace license from https://github.com/tailwindlabs/tailwindcss, version 4.3.5; SHA256 60e0b68c0f35c078eef3a5d29419d0b03ff84ec1df9c3f9d6e39a519a5ae7985

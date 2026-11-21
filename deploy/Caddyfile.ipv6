@@ -1,0 +1,7 @@
+# 无域名访问的示例。替换为你的实际公网 IPv6，并提供可信证书。
+# IP 地址证书的可用性取决于 CA 与 Caddy 版本；不能使用域名证书代替。
+https://[2001:db8::1234] {
+    tls /etc/caddy/panel-ip.crt /etc/caddy/panel-ip.key
+    encode gzip
+    reverse_proxy 127.0.0.1:8787
+}

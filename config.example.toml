@@ -1,0 +1,15 @@
+# 开发环境示例。公网部署请使用 deploy/config.production.toml。
+listen = "127.0.0.1:8787"
+public_origin = "http://127.0.0.1:8787"
+data_dir = "./data"
+secure_cookies = false
+trusted_proxies = []
+# 仅通过本地配置开放明确的可信私网范围；网页不能修改此白名单。
+# 不支持域名、链路本地/云元数据地址或公网 Controller。
+trusted_backend_networks = []
+session_idle_seconds = 1800
+session_absolute_seconds = 86400
+traffic_interval_ms = 1000
+request_timeout_seconds = 10
+delay_test_url = "https://www.gstatic.com/generate_204"
+helper_socket = "/run/mihomo-web-helper/control.sock"

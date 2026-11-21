@@ -1,0 +1,60 @@
+[package]
+name = "mihomo-web-panel"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.92"
+default-run = "mihomo-web-panel"
+description = "A secure, independent web console for an existing Mihomo controller"
+license = "MIT"
+repository = "https://github.com/KaguyaJs/mihomo-web-panel"
+readme = "README.md"
+keywords = ["mihomo", "axum", "proxy", "web", "systemd"]
+categories = ["network-programming", "web-programming::http-server"]
+
+[lib]
+name = "mihomo_web_panel"
+path = "src/lib.rs"
+
+[[bin]]
+name = "mihomo-web-panel"
+path = "src/main.rs"
+
+[[bin]]
+name = "mihomo-web-helper"
+path = "src/bin/helper.rs"
+
+[dependencies]
+anyhow = "1.0"
+argon2 = "0.5"
+axum = { version = "0.8", features = ["ws", "macros"] }
+base64 = "0.22"
+clap = { version = "4.5", features = ["derive"] }
+fs2 = "0.4"
+futures-util = "0.3"
+ipnet = { version = "2.11", features = ["serde"] }
+libc = "0.2"
+mime_guess = "2.0"
+rand = "0.9"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "stream"] }
+rust-embed = { version = "8.7", features = ["compression"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.10"
+sqlx = { version = "0.8", default-features = false, features = ["sqlite", "runtime-tokio", "migrate", "macros"] }
+subtle = "2.6"
+tokio = { version = "1.48", features = ["full"] }
+tokio-tungstenite = { version = "0.28", features = ["rustls-tls-webpki-roots"] }
+toml = "0.9"
+tower = { version = "0.5", features = ["util"] }
+tower-http = { version = "0.6", features = ["trace", "limit", "compression-gzip"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+url = "2.5"
+
+[dev-dependencies]
+tempfile = "3.23"
+
+[profile.release]
+lto = "thin"
+strip = "symbols"
+codegen-units = 1

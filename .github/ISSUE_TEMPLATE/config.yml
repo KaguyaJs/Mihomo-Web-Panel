@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 安全问题
+    url: https://github.com/KaguyaJs/mihomo-web-panel/security/advisories
+    about: 请私密报告漏洞，勿公开凭据或可利用细节。

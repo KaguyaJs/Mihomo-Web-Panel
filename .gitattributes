@@ -1,0 +1,26 @@
+* text=auto eol=lf
+*.sh text eol=lf
+*.rs text eol=lf
+*.toml text eol=lf
+*.service text eol=lf
+*.socket text eol=lf
+*.mjs text eol=lf
+*.py text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.ts text eol=lf
+*.vue text eol=lf
+*.png binary
+*.tar.gz binary
+/.tools export-ignore
+/dist export-ignore
+/target export-ignore
+/web/node_modules export-ignore
+/web/dist export-ignore
+/web/playwright-report export-ignore
+/web/test-results export-ignore
+/data export-ignore
+/config.toml export-ignore
+third_party/** -whitespace

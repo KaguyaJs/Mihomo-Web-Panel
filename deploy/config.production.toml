@@ -1,0 +1,12 @@
+listen = "127.0.0.1:8787"
+public_origin = "https://panel.example.com"
+data_dir = "/var/lib/mihomo-web"
+secure_cookies = true
+trusted_proxies = ["127.0.0.1/32", "::1/128"]
+trusted_backend_networks = []
+session_idle_seconds = 1800
+session_absolute_seconds = 86400
+traffic_interval_ms = 1000
+request_timeout_seconds = 10
+delay_test_url = "https://www.gstatic.com/generate_204"
+helper_socket = "/run/mihomo-web-helper/control.sock"

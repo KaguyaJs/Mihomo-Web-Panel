@@ -1,0 +1,7 @@
+# 将 panel.example.com 替换为已配置 AAAA 记录的域名。
+panel.example.com {
+    encode zstd gzip
+    reverse_proxy 127.0.0.1:8787
+    # Caddy 自动提供 HTTPS 并转发 WebSocket。
+    # 不记录请求体、Cookie 或 Authorization。
+}

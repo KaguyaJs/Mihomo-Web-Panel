@@ -1,0 +1,17 @@
+[Unit]
+Description=Mihomo Web Panel limited systemd control socket
+After=systemd-tmpfiles-setup.service
+
+[Socket]
+ListenStream=/run/mihomo-web-helper/control.sock
+SocketUser=root
+SocketGroup=mihomo-web
+SocketMode=0660
+DirectoryMode=0750
+Accept=no
+Backlog=16
+RemoveOnStop=true
+Service=mihomo-web-helper.service
+
+[Install]
+WantedBy=sockets.target

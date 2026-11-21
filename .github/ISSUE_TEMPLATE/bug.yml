@@ -1,0 +1,31 @@
+name: Bug 报告
+description: 报告可复现的功能问题
+body:
+  - type: markdown
+    attributes:
+      value: 请删除真实 Controller 地址、Secret、Cookie 和个人信息。安全漏洞请使用 SECURITY.md 的报告流程。
+  - type: input
+    id: version
+    attributes:
+      label: 平台版本
+      placeholder: v0.1.0
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: 运行环境
+      description: Linux 发行版、CPU 架构、Mihomo 版本及浏览器版本。
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 复现步骤、期望行为与实际结果
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 脱敏日志或截图
+      description: 仅包含定位问题所需内容。
