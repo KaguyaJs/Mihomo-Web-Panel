@@ -22,7 +22,9 @@ def check_private_content(name: str, data: bytes) -> None:
     try:
         text = data.decode("utf-8-sig")
     except UnicodeDecodeError:
-        return
+        # Executable and image metadata can also contain private paths. Scan
+        # printable runs instead of treating arbitrary machine code as text.
+        text = "\n".join(run.decode("ascii") for run in re.findall(rb"[\x20-\x7e]{8,}", data))
     if any(pattern.search(text) for pattern in PRIVATE_CONTENT):
         raise RuntimeError(f"Private path or credential pattern in {name}")
 
@@ -31,7 +33,7 @@ def check_source_name(name: str) -> None:
     file = Path(name)
     if FORBIDDEN_PARTS.intersection(file.parts) or name.startswith(("dist/", "data/")):
         raise RuntimeError(f"Runtime or generated file is tracked: {name}")
-    if file.name in ("config.toml", "bootstrap-token") or file.name.startswith(".env") or file.suffix in (".db", ".log", ".key", ".pem", ".p12", ".pfx", ".pyc") or file.name.endswith((".db-wal", ".db-shm", ".tsbuildinfo")):
+    if (file.name == "config.toml" and file.as_posix() != ".cargo/config.toml") or file.name in ("config.lock", "instance.lock", "bootstrap-token") or file.name.startswith(".env") or file.suffix in (".db", ".log", ".key", ".pem", ".p12", ".pfx", ".pyc") or file.name.endswith((".db-wal", ".db-shm", ".tsbuildinfo")):
         raise RuntimeError(f"Private runtime file is tracked: {name}")
 
 

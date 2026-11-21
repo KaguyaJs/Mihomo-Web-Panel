@@ -18,6 +18,8 @@ flowchart TD
 
 `src/config.rs` 处理本地信任策略和私密文件；`db.rs` 执行 SQLite 迁移和事务；`auth.rs` 实现 Argon2id、摘要 Session、初始化和账户安全；`security.rs` 执行 Origin、Host、CSRF 与两维限流；`mihomo.rs` 负责有界上游请求和响应字段投影；`streams.rs` 复用流量/日志上游连接；`api.rs` 实现公开和受保护路由；`helper.rs` 实现固定协议和最小权限 systemd 操作；`assets.rs` 内嵌前端。
 
+`runtime.rs` 为 Linux、Windows 和 macOS 提供用户数据目录、便携模式、配置首次生成和浏览器启动。Windows 私密目录及文件由 `windows.rs` 使用原生 ACL API 保护。直接运行不需要外部前端目录；只有 Linux systemd 安装使用独立 helper。
+
 Vue 3 + TypeScript 前端在 `web/`，所有数据来自同源 `/api`。生产资源在 Rust 编译时嵌入，主程序运行无需 Node.js。只有主题偏好存入 localStorage；Cookie 为 HttpOnly；CSRF 保留在内存中。浏览器无法读取保存的 Controller 地址与 Secret，设置页仅允许重新输入。
 
 初始化以单次数据库事务同时创建管理员、保存经验证的后端并消费初始化令牌。没有可抢占账户的独立注册接口。配置保存到 SQLite 事务；监听设置在重启后生效，超时和采样设置动态生效。Session 撤销及过期会关闭已有 WebSocket。

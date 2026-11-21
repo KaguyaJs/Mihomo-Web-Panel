@@ -8,6 +8,7 @@
 /.tools/
 /dist/
 /config.toml
+/config.lock
 .env
 .env.*
 !.env.example

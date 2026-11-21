@@ -8,14 +8,14 @@ body:
     id: version
     attributes:
       label: 平台版本
-      placeholder: v0.1.0
+      placeholder: v0.2.0
     validations:
       required: true
   - type: input
     id: environment
     attributes:
       label: 运行环境
-      description: Linux 发行版、CPU 架构、Mihomo 版本及浏览器版本。
+      description: 操作系统及版本、CPU 架构、直接运行或服务安装方式、Mihomo 版本及浏览器版本。
     validations:
       required: true
   - type: textarea

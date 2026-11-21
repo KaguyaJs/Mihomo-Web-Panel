@@ -32,8 +32,8 @@ dig AAAA panel.example.com
 ## 3. 安装平台
 
 ```bash
-tar -xzf mihomo-web-panel-0.1.0-linux-x86_64.tar.gz
-cd mihomo-web-panel-0.1.0-linux-x86_64
+tar -xzf mihomo-web-panel-0.2.0-linux-x86_64.tar.gz
+cd mihomo-web-panel-0.2.0-linux-x86_64
 sha256sum -c SHA256SUMS
 sudo bash scripts/install.sh --origin https://panel.example.com
 sudo systemctl is-active mihomo-web.service

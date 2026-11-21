@@ -1,10 +1,8 @@
+use anyhow::Context;
 use clap::{Parser, Subcommand};
 use fs2::FileExt;
-use mihomo_web_panel::{
-    AppState, api,
-    config::{Config, private_dir},
-};
-use std::{fs::OpenOptions, path::PathBuf};
+use mihomo_web_panel::{AppState, api, config::private_dir, runtime::RuntimePaths};
+use std::{fs::OpenOptions, io::IsTerminal, path::PathBuf};
 
 #[derive(Parser)]
 #[command(
@@ -12,8 +10,18 @@ use std::{fs::OpenOptions, path::PathBuf};
     about = "Secure independent web management for an existing Mihomo controller"
 )]
 struct Args {
-    #[arg(long, global = true, default_value = "config.toml")]
-    config: PathBuf,
+    /// Use an existing configuration file instead of the per-user defaults.
+    #[arg(long, global = true)]
+    config: Option<PathBuf>,
+    /// Store config.toml and data beside the executable.
+    #[arg(long, global = true, conflicts_with = "config")]
+    portable: bool,
+    /// Open the web interface in the default browser.
+    #[arg(long, global = true, conflicts_with = "no_open")]
+    open: bool,
+    /// Disable automatic browser launch for standalone startup.
+    #[arg(long, global = true)]
+    no_open: bool,
     #[command(subcommand)]
     command: Option<Commands>,
 }
@@ -24,6 +32,8 @@ enum Commands {
     BootstrapToken,
     CheckConfig,
     ResetWebSettings,
+    /// Show the configuration file and private data directory.
+    Paths,
 }
 
 #[tokio::main]
@@ -36,8 +46,29 @@ async fn main() -> anyhow::Result<()> {
         .with_target(false)
         .init();
     let args = Args::parse();
-    let config = Config::load(&args.config)?;
-    match args.command.unwrap_or(Commands::Serve) {
+    let standalone = args.config.is_none();
+    let interactive = std::io::stdout().is_terminal() && std::io::stdin().is_terminal();
+    let should_open =
+        !args.no_open && (args.open || (standalone && args.command.is_none() && interactive));
+    let command = args.command.unwrap_or(Commands::Serve);
+    #[cfg(unix)]
+    if matches!(command, Commands::Serve | Commands::ResetWebSettings) {
+        anyhow::ensure!(
+            unsafe { libc::geteuid() } != 0,
+            "the web service must run as a non-root user"
+        );
+        unsafe { libc::umask(0o077) };
+    }
+    let paths = RuntimePaths::resolve(args.config.as_deref(), args.portable)?;
+    let config = paths.load(matches!(command, Commands::Serve))?;
+    match command {
+        Commands::Paths => {
+            println!(
+                "{}",
+                serde_json::json!({"config": paths.config, "data": config.data_dir})
+            );
+            return Ok(());
+        }
         Commands::BootstrapToken => {
             let token = std::fs::read_to_string(config.data_dir.join("bootstrap-token"))
                 .map_err(|_| anyhow::anyhow!("initialization token unavailable; start the service first, or initialization is already complete"))?;
@@ -64,16 +95,6 @@ async fn main() -> anyhow::Result<()> {
             return Ok(());
         }
         Commands::ResetWebSettings => {
-            #[cfg(unix)]
-            {
-                anyhow::ensure!(
-                    unsafe { libc::geteuid() } != 0,
-                    "run this command as the non-root web service user"
-                );
-                unsafe {
-                    libc::umask(0o077);
-                }
-            }
             private_dir(&config.data_dir)?;
             let lock = OpenOptions::new()
                 .read(true)
@@ -94,16 +115,6 @@ async fn main() -> anyhow::Result<()> {
         }
         Commands::Serve => {}
     }
-    #[cfg(unix)]
-    {
-        anyhow::ensure!(
-            unsafe { libc::geteuid() } != 0,
-            "the web service must run as a non-root user"
-        );
-        unsafe {
-            libc::umask(0o077);
-        }
-    }
     private_dir(&config.data_dir)?;
     let lock = OpenOptions::new()
         .read(true)
@@ -115,10 +126,33 @@ async fn main() -> anyhow::Result<()> {
         .map_err(|_| anyhow::anyhow!("another service instance is using this data directory"))?;
     let state = AppState::new(config).await?;
     let address = state.active_settings.listen;
-    let listener = tokio::net::TcpListener::bind(address).await?;
+    let listener = tokio::net::TcpListener::bind(address).await.context(
+        "cannot bind the configured address; check whether the panel is already running",
+    )?;
     tracing::info!(listen = %address, version = env!("CARGO_PKG_VERSION"), "mihomo-web-panel started");
+    if standalone {
+        println!("浏览器入口：{}", state.active_settings.public_origin);
+        println!("配置文件：{}", paths.config.display());
+        println!("数据目录：{}", state.config.data_dir.display());
+        println!("按 Ctrl+C 停止；关闭浏览器不会停止本程序。");
+        // Only an interactive standalone console receives the one-time token.
+        // Service logs and redirected stdout never contain initialization secrets.
+        if interactive && !mihomo_web_panel::auth::initialized(&state.pool).await? {
+            let token = std::fs::read_to_string(state.config.data_dir.join("bootstrap-token"))?;
+            println!("一次性初始化令牌：{}", token.trim());
+        }
+    }
+    if should_open {
+        let origin = state.active_settings.public_origin.clone();
+        tokio::task::spawn_blocking(move || {
+            if mihomo_web_panel::runtime::open_browser(&origin).is_err() {
+                tracing::warn!("cannot open the default browser; use the displayed web address");
+            }
+        });
+    }
     let signal_state = state.clone();
     let cleanup_state = state.clone();
+    let pool = state.pool.clone();
     let app = api::router(state);
     let cleanup = tokio::spawn(async move {
         let mut interval = tokio::time::interval(std::time::Duration::from_secs(300));
@@ -151,13 +185,16 @@ async fn main() -> anyhow::Result<()> {
                     .expect("cannot install termination handler");
             tokio::select! { _ = tokio::signal::ctrl_c() => {}, _ = terminate.recv() => {} }
         }
-        #[cfg(not(unix))]
+        #[cfg(windows)]
         {
-            let _ = tokio::signal::ctrl_c().await;
+            let mut terminate =
+                tokio::signal::windows::ctrl_break().expect("cannot install termination handler");
+            tokio::select! { _ = tokio::signal::ctrl_c() => {}, _ = terminate.recv() => {} }
         }
         signal_state.shutdown.send_replace(true);
     })
     .await?;
     cleanup.abort();
+    pool.close().await;
     Ok(())
 }

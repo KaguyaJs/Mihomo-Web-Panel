@@ -45,7 +45,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, windows-latest]
+        os: [ubuntu-24.04, windows-latest, macos-15]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 35
     steps:
@@ -88,13 +88,15 @@ jobs:
         if: runner.os == 'Linux'
         working-directory: web
         run: npx playwright install --with-deps chromium
-      - name: Install Chromium (Windows)
-        if: runner.os == 'Windows'
+      - name: Install Chromium (Windows and macOS)
+        if: runner.os != 'Linux'
         working-directory: web
         run: npx playwright install chromium
       - name: Browser workflows
         working-directory: web
         run: npm run test:e2e
+      - name: Standalone startup and persisted data
+        run: python tests/standalone_smoke.py
       - name: Real systemd install, upgrade and uninstall
         if: runner.os == 'Linux'
         run: |

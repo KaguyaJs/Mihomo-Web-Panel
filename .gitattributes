@@ -1,5 +1,6 @@
 * text=auto eol=lf
 *.sh text eol=lf
+*.command text eol=lf
 *.rs text eol=lf
 *.toml text eol=lf
 *.service text eol=lf
@@ -14,6 +15,7 @@
 *.vue text eol=lf
 *.png binary
 *.tar.gz binary
+*.zip binary
 /.tools export-ignore
 /dist export-ignore
 /target export-ignore
@@ -23,4 +25,5 @@
 /web/test-results export-ignore
 /data export-ignore
 /config.toml export-ignore
+/config.lock export-ignore
 third_party/** -whitespace

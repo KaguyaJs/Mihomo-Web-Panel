@@ -7,9 +7,9 @@
 Release 由 `v*` 标签推送或手动选择已有版本标签触发，依次执行：
 
 1. 校验标签、Cargo.toml、前端 package / lockfile 和 CHANGELOG.md 版本一致，并确认 checkout 对应标签提交。
-2. 执行与 CI 相同的 Linux / Windows、最低 Rust、浏览器和真实 systemd 检查。
-3. 在 x86_64、ARM64 原生 Linux runner 构建 musl 静态可执行文件，运行目标平台测试及 systemd 验证。
-4. 收集许可证、制作两个部署包和完整源码归档，验证 ELF、归档内容、权限和 SHA256。
+2. 执行与 CI 相同的 Linux / Windows / macOS、最低 Rust、浏览器、独立启动和真实 systemd 检查。
+3. 在五个原生目标构建程序并运行目标测试：Linux x86_64 / ARM64、Windows x64、macOS Intel / Apple Silicon。Linux 使用 musl，Windows 静态链接 C 运行库，macOS 使用系统库并执行 ad-hoc 签名。
+4. 收集许可证、制作五个二进制包和完整源码归档，验证 ELF / PE / Mach-O、依赖库、归档内容、权限、路径隐私和 SHA256。在原生目标实际解压发行包，验证默认 / 便携启动、初始化、数据权限、API、会话持久化和正常关闭；Linux 另执行 systemd 验证。
 5. 汇总发行版文件，创建或更新草稿，全部上传成功后将草稿发布。
 
 普通检查和构建任务只获得 `contents: read`。仅最终发布任务获得 `contents: write`，使用 GitHub 自动提供的 GITHUB_TOKEN，不需要保存个人访问令牌。外部 Actions 固定到提交 SHA，Dependabot 负责更新。
@@ -29,13 +29,15 @@ Release 由 `v*` 标签推送或手动选择已有版本标签触发，依次执
 ```bash
 git switch main
 git pull --ff-only
-git tag -a v0.1.0 -m "Release v0.1.0"
-git push origin v0.1.0
+git tag -a v0.2.0 -m "Release v0.2.0"
+git push origin v0.2.0
 ```
 
-`v0.1.0` 是示例，已发布版本必须使用新版本号。预发行可使用 `v0.2.0-rc.1`，并同步相应版本字段；包含预发行后缀的标签会发布为 prerelease。
+`v0.2.0` 是示例，已发布版本必须使用新版本号。预发行可使用 `v0.2.0-rc.1`，并同步相应版本字段；包含预发行后缀的标签会发布为 prerelease。
 
-仓库需要启用 GitHub Actions 并允许 GITHUB_TOKEN 创建发行版。原生 ARM64 runner 使用 `ubuntu-24.04-arm`；组织 runner 策略需要允许该标签。工作流不会申请自定义服务器或部署生产服务。
+仓库需要启用 GitHub Actions 并允许 GITHUB_TOKEN 创建发行版。原生 runner 使用 `ubuntu-24.04`、`ubuntu-24.04-arm`、`windows-latest`、`macos-15-intel` 和 `macos-15`；仓库 runner 策略需要允许这些标签。五个目标的唯一清单位于 scripts/package-release.py，标签元数据生成构建矩阵，完整验证使用同一清单，避免遗漏平台。工作流不会申请自定义服务器或部署生产服务。
+
+macOS 的 ad-hoc 签名不等于 Developer ID 签名或 Apple 公证；当前不需要 Apple 证书或账户凭据。首次下载可能需要用户按系统提示允许程序运行。
 
 ## 发行版文件
 
@@ -43,10 +45,13 @@ git push origin v0.1.0
 | --- | --- |
 | `mihomo-web-panel-X.Y.Z-linux-x86_64.tar.gz` | x86_64 主程序、helper、安装脚本、部署配置和文档 |
 | `mihomo-web-panel-X.Y.Z-linux-aarch64.tar.gz` | ARM64 主程序及相同部署文件 |
+| `mihomo-web-panel-X.Y.Z-windows-x86_64.zip` | Windows x64 主程序、配置示例、文档和许可证 |
+| `mihomo-web-panel-X.Y.Z-macos-x86_64.tar.gz` | Intel Mac 主程序与 Start.command |
+| `mihomo-web-panel-X.Y.Z-macos-aarch64.tar.gz` | Apple Silicon 主程序与 Start.command |
 | `mihomo-web-panel-X.Y.Z-source.tar.gz` | Rust、Vue、测试、迁移、锁文件、文档和许可证 |
 | `SHA256SUMS` | 以上归档的 SHA256 校验值 |
 
-每份归档内部另有 SHA256SUMS，供解压后逐文件校验。归档时间使用标签提交的时间，用户与组固定为 root，不携带构建机器路径或账户。源码归档排除编译缓存、临时工具、开发配置、数据库、日志和凭据。
+主程序位于二进制归档根目录；Linux helper 也在根目录，安装器继续兼容早期 bin/ 布局。每份归档内部另有 SHA256SUMS，供解压后逐文件校验。归档时间使用标签提交的时间；tar 用户与组固定为 root，ZIP 不保存用户账户。Rust 发布构建映射源码和工具链路径，归档和可执行内容检查禁止私有路径。源码归档排除编译缓存、临时工具、开发配置、数据库、日志和凭据。
 
 ## 手动运行与重试
 
@@ -67,4 +72,4 @@ python3 scripts/package-release.py --source-only
 python3 scripts/verify-archives.py --architecture x86_64 --require-source
 ```
 
-完整发行版验证使用 `python3 scripts/verify-archives.py --complete`，要求两种架构与源码都存在。发布前检查 `python3 scripts/check-repository.py`。
+Windows 和 macOS 使用 `--target` 选择各自目标；实际构建使用 `python3 scripts/build-release.py --target TARGET`。完整发行版验证使用 `python3 scripts/verify-archives.py --complete`，要求五个二进制包与源码都存在。发布前检查 `python3 scripts/check-repository.py`。

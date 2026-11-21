@@ -1,7 +1,7 @@
 # 第三方依赖与许可证
 
 本项目自身采用 MIT 许可证。以下清单依据 Cargo.lock、web/package-lock.json 和已安装的依赖生成。
-Rust 清单包含 `x86_64-unknown-linux-musl` 发布目标的生产与编译依赖；前端清单包含生产依赖及 Tailwind 构建组件。
+Rust 清单包含 `x86_64-pc-windows-msvc` 发布目标的生产与编译依赖；前端清单包含生产依赖及 Tailwind 构建组件。
 清单采用保守范围，部分编译工具不会进入最终程序。测试框架、临时虚拟机和下载的 API 参考材料不随生产程序分发。
 各依赖保留自己的许可证和版权声明，完整文本位于 third_party/licenses。更新锁文件后请重新生成。
 
@@ -17,6 +17,7 @@ Rust 清单包含 `x86_64-unknown-linux-musl` 发布目标的生产与编译依�
 | [anstyle](https://crates.io/crates/anstyle/1.0.14) | 1.0.14 | MIT OR Apache-2.0 | [LICENSE-APACHE](third_party/licenses/rust/anstyle-1.0.14/LICENSE-APACHE), [LICENSE-MIT](third_party/licenses/rust/anstyle-1.0.14/LICENSE-MIT) |
 | [anstyle-parse](https://crates.io/crates/anstyle-parse/1.0.0) | 1.0.0 | MIT OR Apache-2.0 | [LICENSE-APACHE](third_party/licenses/rust/anstyle-parse-1.0.0/LICENSE-APACHE), [LICENSE-MIT](third_party/licenses/rust/anstyle-parse-1.0.0/LICENSE-MIT) |
 | [anstyle-query](https://crates.io/crates/anstyle-query/1.1.5) | 1.1.5 | MIT OR Apache-2.0 | [LICENSE-APACHE](third_party/licenses/rust/anstyle-query-1.1.5/LICENSE-APACHE), [LICENSE-MIT](third_party/licenses/rust/anstyle-query-1.1.5/LICENSE-MIT) |
+| [anstyle-wincon](https://crates.io/crates/anstyle-wincon/3.0.11) | 3.0.11 | MIT OR Apache-2.0 | [LICENSE-APACHE](third_party/licenses/rust/anstyle-wincon-3.0.11/LICENSE-APACHE), [LICENSE-MIT](third_party/licenses/rust/anstyle-wincon-3.0.11/LICENSE-MIT) |
 | [anyhow](https://crates.io/crates/anyhow/1.0.104) | 1.0.104 | MIT OR Apache-2.0 | [LICENSE-APACHE](third_party/licenses/rust/anyhow-1.0.104/LICENSE-APACHE), [LICENSE-MIT](third_party/licenses/rust/anyhow-1.0.104/LICENSE-MIT) |
 | [argon2](https://crates.io/crates/argon2/0.5.3) | 0.5.3 | MIT OR Apache-2.0 | [LICENSE-APACHE](third_party/licenses/rust/argon2-0.5.3/LICENSE-APACHE), [LICENSE-MIT](third_party/licenses/rust/argon2-0.5.3/LICENSE-MIT) |
 | [async-compression](https://crates.io/crates/async-compression/0.4.52) | 0.4.52 | MIT OR Apache-2.0 | [LICENSE-APACHE](third_party/licenses/rust/async-compression-0.4.52/LICENSE-APACHE), [LICENSE-MIT](third_party/licenses/rust/async-compression-0.4.52/LICENSE-MIT) |
@@ -66,7 +67,7 @@ Rust 清单包含 `x86_64-unknown-linux-musl` 发布目标的生产与编译依�
 | [dotenvy](https://crates.io/crates/dotenvy/0.15.7) | 0.15.7 | MIT | [LICENSE](third_party/licenses/rust/dotenvy-0.15.7/LICENSE) |
 | [either](https://crates.io/crates/either/1.19.0) | 1.19.0 | MIT OR Apache-2.0 | [LICENSE-APACHE](third_party/licenses/rust/either-1.19.0/LICENSE-APACHE), [LICENSE-MIT](third_party/licenses/rust/either-1.19.0/LICENSE-MIT) |
 | [equivalent](https://crates.io/crates/equivalent/1.0.3) | 1.0.3 | Apache-2.0 OR MIT | [LICENSE-APACHE](third_party/licenses/rust/equivalent-1.0.3/LICENSE-APACHE), [LICENSE-MIT](third_party/licenses/rust/equivalent-1.0.3/LICENSE-MIT) |
-| [errno](https://crates.io/crates/errno/0.3.15) | 0.3.15 | MIT OR Apache-2.0 | [LICENSE-APACHE](third_party/licenses/rust/errno-0.3.15/LICENSE-APACHE), [LICENSE-MIT](third_party/licenses/rust/errno-0.3.15/LICENSE-MIT) |
+| [etcetera](https://crates.io/crates/etcetera/0.8.0) | 0.8.0 | MIT OR Apache-2.0 | [LICENSE-APACHE](third_party/licenses/rust/etcetera-0.8.0/LICENSE-APACHE), [LICENSE-MIT](third_party/licenses/rust/etcetera-0.8.0/LICENSE-MIT) |
 | [event-listener](https://crates.io/crates/event-listener/5.4.2) | 5.4.2 | Apache-2.0 OR MIT | [LICENSE-APACHE](third_party/licenses/rust/event-listener-5.4.2/LICENSE-APACHE), [LICENSE-MIT](third_party/licenses/rust/event-listener-5.4.2/LICENSE-MIT) |
 | [find-msvc-tools](https://crates.io/crates/find-msvc-tools/0.1.15) | 0.1.15 | MIT OR Apache-2.0 | [LICENSE-APACHE](third_party/licenses/rust/find-msvc-tools-0.1.15/LICENSE-APACHE), [LICENSE-MIT](third_party/licenses/rust/find-msvc-tools-0.1.15/LICENSE-MIT) |
 | [flate2](https://crates.io/crates/flate2/1.1.11) | 1.1.11 | MIT OR Apache-2.0 | [LICENSE-APACHE](third_party/licenses/rust/flate2-1.1.11/LICENSE-APACHE), [LICENSE-MIT](third_party/licenses/rust/flate2-1.1.11/LICENSE-MIT) |
@@ -148,6 +149,7 @@ Rust 清单包含 `x86_64-unknown-linux-musl` 发布目标的生产与编译依�
 | [num-iter](https://crates.io/crates/num-iter/0.1.46) | 0.1.46 | MIT OR Apache-2.0 | [LICENSE-APACHE](third_party/licenses/rust/num-iter-0.1.46/LICENSE-APACHE), [LICENSE-MIT](third_party/licenses/rust/num-iter-0.1.46/LICENSE-MIT) |
 | [num-traits](https://crates.io/crates/num-traits/0.2.19) | 0.2.19 | MIT OR Apache-2.0 | [LICENSE-APACHE](third_party/licenses/rust/num-traits-0.2.19/LICENSE-APACHE), [LICENSE-MIT](third_party/licenses/rust/num-traits-0.2.19/LICENSE-MIT) |
 | [once_cell](https://crates.io/crates/once_cell/1.21.4) | 1.21.4 | MIT OR Apache-2.0 | [LICENSE-APACHE](third_party/licenses/rust/once_cell-1.21.4/LICENSE-APACHE), [LICENSE-MIT](third_party/licenses/rust/once_cell-1.21.4/LICENSE-MIT) |
+| [once_cell_polyfill](https://crates.io/crates/once_cell_polyfill/1.70.2) | 1.70.2 | MIT OR Apache-2.0 | [LICENSE-APACHE](third_party/licenses/rust/once_cell_polyfill-1.70.2/LICENSE-APACHE), [LICENSE-MIT](third_party/licenses/rust/once_cell_polyfill-1.70.2/LICENSE-MIT) |
 | [parking](https://crates.io/crates/parking/2.2.1) | 2.2.1 | Apache-2.0 OR MIT | [LICENSE-APACHE](third_party/licenses/rust/parking-2.2.1/LICENSE-APACHE), [LICENSE-MIT](third_party/licenses/rust/parking-2.2.1/LICENSE-MIT), [LICENSE-THIRD-PARTY](third_party/licenses/rust/parking-2.2.1/LICENSE-THIRD-PARTY) |
 | [parking_lot](https://crates.io/crates/parking_lot/0.12.5) | 0.12.5 | MIT OR Apache-2.0 | [LICENSE-APACHE](third_party/licenses/rust/parking_lot-0.12.5/LICENSE-APACHE), [LICENSE-MIT](third_party/licenses/rust/parking_lot-0.12.5/LICENSE-MIT) |
 | [parking_lot_core](https://crates.io/crates/parking_lot_core/0.9.12) | 0.9.12 | MIT OR Apache-2.0 | [LICENSE-APACHE](third_party/licenses/rust/parking_lot_core-0.9.12/LICENSE-APACHE), [LICENSE-MIT](third_party/licenses/rust/parking_lot_core-0.9.12/LICENSE-MIT) |
@@ -204,7 +206,6 @@ Rust 清单包含 `x86_64-unknown-linux-musl` 发布目标的生产与编译依�
 | [sha2](https://crates.io/crates/sha2/0.11.1) | 0.11.1 | MIT OR Apache-2.0 | [LICENSE-APACHE](third_party/licenses/rust/sha2-0.11.1/LICENSE-APACHE), [LICENSE-MIT](third_party/licenses/rust/sha2-0.11.1/LICENSE-MIT) |
 | [sharded-slab](https://crates.io/crates/sharded-slab/0.1.7) | 0.1.7 | MIT | [LICENSE](third_party/licenses/rust/sharded-slab-0.1.7/LICENSE) |
 | [shlex](https://crates.io/crates/shlex/2.0.1) | 2.0.1 | MIT OR Apache-2.0 | [LICENSE-APACHE](third_party/licenses/rust/shlex-2.0.1/LICENSE-APACHE), [LICENSE-MIT](third_party/licenses/rust/shlex-2.0.1/LICENSE-MIT) |
-| [signal-hook-registry](https://crates.io/crates/signal-hook-registry/1.4.8) | 1.4.8 | MIT OR Apache-2.0 | [LICENSE-APACHE](third_party/licenses/rust/signal-hook-registry-1.4.8/LICENSE-APACHE), [LICENSE-MIT](third_party/licenses/rust/signal-hook-registry-1.4.8/LICENSE-MIT) |
 | [signature](https://crates.io/crates/signature/2.2.0) | 2.2.0 | Apache-2.0 OR MIT | [LICENSE-APACHE](third_party/licenses/rust/signature-2.2.0/LICENSE-APACHE), [LICENSE-MIT](third_party/licenses/rust/signature-2.2.0/LICENSE-MIT) |
 | [simd-adler32](https://crates.io/crates/simd-adler32/0.3.10) | 0.3.10 | MIT | [LICENSE.md](third_party/licenses/rust/simd-adler32-0.3.10/LICENSE.md) |
 | [slab](https://crates.io/crates/slab/0.4.12) | 0.4.12 | MIT | [LICENSE](third_party/licenses/rust/slab-0.4.12/LICENSE) |
@@ -274,6 +275,13 @@ Rust 清单包含 `x86_64-unknown-linux-musl` 发布目标的生产与编译依�
 | [webpki-roots](https://crates.io/crates/webpki-roots/0.26.11) | 0.26.11 | CDLA-Permissive-2.0 | [LICENSE](third_party/licenses/rust/webpki-roots-0.26.11/LICENSE) |
 | [webpki-roots](https://crates.io/crates/webpki-roots/1.0.12) | 1.0.12 | CDLA-Permissive-2.0 | [LICENSE](third_party/licenses/rust/webpki-roots-1.0.12/LICENSE) |
 | [whoami](https://crates.io/crates/whoami/1.6.1) | 1.6.1 | Apache-2.0 OR BSL-1.0 OR MIT | [LICENSE_APACHE](third_party/licenses/rust/whoami-1.6.1/LICENSE_APACHE), [LICENSE_BOOST](third_party/licenses/rust/whoami-1.6.1/LICENSE_BOOST), [LICENSE_MIT](third_party/licenses/rust/whoami-1.6.1/LICENSE_MIT) |
+| [winapi](https://crates.io/crates/winapi/0.3.9) | 0.3.9 | MIT/Apache-2.0 | [LICENSE-APACHE](third_party/licenses/rust/winapi-0.3.9/LICENSE-APACHE), [LICENSE-MIT](third_party/licenses/rust/winapi-0.3.9/LICENSE-MIT) |
+| [winapi-util](https://crates.io/crates/winapi-util/0.1.11) | 0.1.11 | Unlicense OR MIT | [COPYING](third_party/licenses/rust/winapi-util-0.1.11/COPYING), [LICENSE-MIT](third_party/licenses/rust/winapi-util-0.1.11/LICENSE-MIT), [UNLICENSE](third_party/licenses/rust/winapi-util-0.1.11/UNLICENSE) |
+| [windows-link](https://crates.io/crates/windows-link/0.2.1) | 0.2.1 | MIT OR Apache-2.0 | [license-apache-2.0](third_party/licenses/rust/windows-link-0.2.1/license-apache-2.0), [license-mit](third_party/licenses/rust/windows-link-0.2.1/license-mit) |
+| [windows-sys](https://crates.io/crates/windows-sys/0.48.0) | 0.48.0 | MIT OR Apache-2.0 | [license-apache-2.0](third_party/licenses/rust/windows-sys-0.48.0/license-apache-2.0), [license-mit](third_party/licenses/rust/windows-sys-0.48.0/license-mit) |
+| [windows-sys](https://crates.io/crates/windows-sys/0.61.2) | 0.61.2 | MIT OR Apache-2.0 | [license-apache-2.0](third_party/licenses/rust/windows-sys-0.61.2/license-apache-2.0), [license-mit](third_party/licenses/rust/windows-sys-0.61.2/license-mit) |
+| [windows-targets](https://crates.io/crates/windows-targets/0.48.5) | 0.48.5 | MIT OR Apache-2.0 | [license-apache-2.0](third_party/licenses/rust/windows-targets-0.48.5/license-apache-2.0), [license-mit](third_party/licenses/rust/windows-targets-0.48.5/license-mit) |
+| [windows_x86_64_msvc](https://crates.io/crates/windows_x86_64_msvc/0.48.5) | 0.48.5 | MIT OR Apache-2.0 | [license-apache-2.0](third_party/licenses/rust/windows_x86_64_msvc-0.48.5/license-apache-2.0), [license-mit](third_party/licenses/rust/windows_x86_64_msvc-0.48.5/license-mit) |
 | [winnow](https://crates.io/crates/winnow/0.7.15) | 0.7.15 | MIT | [LICENSE-MIT](third_party/licenses/rust/winnow-0.7.15/LICENSE-MIT) |
 | [winnow](https://crates.io/crates/winnow/1.0.5) | 1.0.5 | MIT | [LICENSE-MIT](third_party/licenses/rust/winnow-1.0.5/LICENSE-MIT) |
 | [writeable](https://crates.io/crates/writeable/0.6.4) | 0.6.4 | Unicode-3.0 | [LICENSE](third_party/licenses/rust/writeable-0.6.4/LICENSE) |

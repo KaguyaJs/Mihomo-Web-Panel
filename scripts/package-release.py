@@ -1,4 +1,4 @@
-"""Create Linux binary and complete source archives, with SHA256 checksums.
+"""Create standalone platform binaries and complete source archives with SHA256.
 
 Run after frontend build, Rust release build, verification and license collection.
 Python 3.11+ is sufficient; no third-party Python packages are needed.
@@ -16,15 +16,20 @@ import subprocess
 import tarfile
 import time
 import tomllib
+import zipfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 TARGETS = {
-    "x86_64-unknown-linux-musl": ("x86_64", 62),
-    "aarch64-unknown-linux-musl": ("aarch64", 183),
+    "x86_64-unknown-linux-musl": {"platform": "linux", "architecture": "x86_64", "machine": 62, "format": "tar.gz", "runner": "ubuntu-24.04"},
+    "aarch64-unknown-linux-musl": {"platform": "linux", "architecture": "aarch64", "machine": 183, "format": "tar.gz", "runner": "ubuntu-24.04-arm"},
+    "x86_64-pc-windows-msvc": {"platform": "windows", "architecture": "x86_64", "machine": 0x8664, "format": "zip", "runner": "windows-latest"},
+    "x86_64-apple-darwin": {"platform": "macos", "architecture": "x86_64", "machine": 0x01000007, "format": "tar.gz", "runner": "macos-15-intel"},
+    "aarch64-apple-darwin": {"platform": "macos", "architecture": "aarch64", "machine": 0x0100000C, "format": "tar.gz", "runner": "macos-15"},
 }
-SHARED_FILES = ["README.md", "LICENSE", "THIRD_PARTY_NOTICES.md", "CHANGELOG.md", "SECURITY.md"]
-SOURCE_FILES = SHARED_FILES + ["CONTRIBUTING.md", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "config.example.toml", ".editorconfig", ".gitattributes", ".gitignore"]
+SHARED_FILES = ["README.md", "LICENSE", "THIRD_PARTY_NOTICES.md", "CHANGELOG.md", "SECURITY.md", "config.example.toml"]
+SOURCE_FILES = SHARED_FILES + ["CONTRIBUTING.md", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", ".cargo/config.toml", ".editorconfig", ".gitattributes", ".gitignore"]
 SOURCE_DIRECTORIES = ["src", "migrations", "tests", "examples", "scripts", "deploy", "docs", "third_party", ".github", "web/src", "web/e2e", "web/public"]
 FRONTEND_FILES = ["package.json", "package-lock.json", "index.html", "vite.config.ts", "vitest.config.ts", "playwright.config.ts", "tsconfig.json", "tsconfig.app.json", "tsconfig.node.json"]
 
@@ -53,6 +58,110 @@ def validate_elf(data: bytes, machine: int) -> None:
 
 def verify_elf(file: Path, machine: int) -> None:
     validate_elf(file.read_bytes(), machine)
+
+
+def c_string(data: bytes, offset: int, end: int) -> str:
+    if not 0 <= offset < end <= len(data):
+        raise RuntimeError("Invalid executable string offset")
+    stop = data.find(b"\0", offset, end)
+    if stop == -1:
+        raise RuntimeError("Unterminated executable string")
+    return data[offset:stop].decode("ascii")
+
+
+def validate_pe(data: bytes, machine: int) -> None:
+    if len(data) < 64 or data[:2] != b"MZ":
+        raise RuntimeError("Not a Windows PE executable")
+    offset = struct.unpack_from("<I", data, 60)[0]
+    if offset < 64 or offset + 24 > len(data) or data[offset:offset + 4] != b"PE\0\0":
+        raise RuntimeError("Invalid Windows PE header")
+    actual, sections = struct.unpack_from("<HH", data, offset + 4)
+    size, flags = struct.unpack_from("<HH", data, offset + 20)
+    optional = offset + 24
+    table = optional + size
+    if actual != machine or not flags & 2 or size < 128 or table + sections * 40 > len(data):
+        raise RuntimeError("Unexpected Windows architecture or header")
+    if struct.unpack_from("<H", data, optional)[0] != 0x20B:
+        raise RuntimeError("Windows release must use PE32+")
+
+    def file_offset(rva: int) -> int:
+        for index in range(sections):
+            section = table + index * 40
+            virtual_size, address, raw_size, raw = struct.unpack_from("<IIII", data, section + 8)
+            if address <= rva < address + max(virtual_size, raw_size):
+                position = raw + rva - address
+                if not raw <= position < raw + raw_size <= len(data):
+                    break
+                return position
+        raise RuntimeError("Invalid PE import address")
+
+    import_rva, import_size = struct.unpack_from("<II", data, optional + 120)
+    if not import_rva or import_size < 20:
+        raise RuntimeError("Windows executable is missing its system import table")
+    imports = file_offset(import_rva)
+    terminated = False
+    for entry in range(imports, min(imports + import_size, len(data)) - 19, 20):
+        values = struct.unpack_from("<IIIII", data, entry)
+        if not any(values):
+            terminated = True
+            break
+        name = c_string(data, file_offset(values[3]), len(data)).lower()
+        if name.startswith(("vcruntime", "msvcp", "msvcr", "api-ms-win-crt-", "libgcc", "libstdc++")) or name == "ucrtbase.dll":
+            raise RuntimeError("Windows executable requires an external C/C++ runtime")
+    if not terminated:
+        raise RuntimeError("Unterminated PE import table")
+
+
+def validate_macho(data: bytes, machine: int) -> None:
+    if len(data) < 32 or data[:4] != b"\xcf\xfa\xed\xfe":
+        raise RuntimeError("Not a 64-bit little-endian macOS Mach-O executable")
+    actual, _, kind, count, commands_size = struct.unpack_from("<IIIII", data, 4)
+    if actual != machine or kind != 2 or not count or 32 + commands_size > len(data):
+        raise RuntimeError("Unexpected macOS architecture or header")
+    offset = 32
+    for _ in range(count):
+        if offset + 8 > 32 + commands_size:
+            raise RuntimeError("Truncated Mach-O command")
+        command, size = struct.unpack_from("<II", data, offset)
+        if size < 8 or offset + size > 32 + commands_size:
+            raise RuntimeError("Invalid Mach-O command size")
+        if command in (0xC, 0x80000018, 0x8000001F, 0x80000023):
+            if size < 24:
+                raise RuntimeError("Invalid Mach-O library command")
+            name_offset = struct.unpack_from("<I", data, offset + 8)[0]
+            if name_offset < 24:
+                raise RuntimeError("Invalid Mach-O library name")
+            library = c_string(data, offset + name_offset, offset + size)
+            if not library.startswith(("/usr/lib/", "/System/Library/")):
+                raise RuntimeError("macOS executable requires a non-system library")
+        elif command == 0x8000001C:
+            raise RuntimeError("macOS executable contains an external runtime search path")
+        offset += size
+    if offset != 32 + commands_size:
+        raise RuntimeError("Mach-O command table length differs")
+
+
+def binary_name(target: str) -> str:
+    return "mihomo-web-panel.exe" if TARGETS[target]["platform"] == "windows" else "mihomo-web-panel"
+
+
+def release_prefix(version: str, target: str) -> str:
+    info = TARGETS[target]
+    return f"mihomo-web-panel-{version}-{info['platform']}-{info['architecture']}"
+
+
+def release_name(version: str, target: str) -> str:
+    return release_prefix(version, target) + "." + TARGETS[target]["format"]
+
+
+def validate_binary(data: bytes, target: str) -> None:
+    info = TARGETS[target]
+    validator = {"linux": validate_elf, "windows": validate_pe, "macos": validate_macho}[info["platform"]]
+    validator(data, info["machine"])
+
+
+def file_mode(name: str) -> int:
+    return 0o755 if name.startswith("bin/") or name in ("mihomo-web-panel", "mihomo-web-panel.exe", "mihomo-web-helper") or name.endswith((".sh", ".command")) else 0o644
 
 
 def version_from_project() -> str:
@@ -96,15 +205,26 @@ def archive(destination: Path, prefix: str, sources: dict[str, Path], timestamp:
     checksum = "".join(f"{hashlib.sha256(content).hexdigest()}  {name}\n" for name, content in contents.items())
     contents["SHA256SUMS"] = checksum.encode()
     temporary = destination.with_suffix(destination.suffix + ".tmp")
-    with temporary.open("wb") as output, gzip.GzipFile(filename="", fileobj=output, mode="wb", mtime=timestamp, compresslevel=9) as compressed, tarfile.open(fileobj=compressed, mode="w|", format=tarfile.PAX_FORMAT) as tar:
-        for name, content in contents.items():
-            entry = tarfile.TarInfo(prefix + "/" + name)
-            entry.size = len(content)
-            entry.mtime = timestamp
-            entry.mode = 0o755 if name.startswith("bin/") or name.endswith(".sh") else 0o644
-            entry.uid = entry.gid = 0
-            entry.uname = entry.gname = "root"
-            tar.addfile(entry, io.BytesIO(content))
+    if destination.suffix == ".zip":
+        moment = datetime.fromtimestamp(max(315532800, min(timestamp, 4354819198)), timezone.utc)
+        date = (moment.year, moment.month, moment.day, moment.hour, moment.minute, moment.second // 2 * 2)
+        with zipfile.ZipFile(temporary, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as package:
+            for name, content in contents.items():
+                entry = zipfile.ZipInfo(prefix + "/" + name, date)
+                entry.create_system = 3
+                entry.external_attr = (0o100000 | file_mode(name)) << 16
+                entry.compress_type = zipfile.ZIP_DEFLATED
+                package.writestr(entry, content, compresslevel=9)
+    else:
+        with temporary.open("wb") as output, gzip.GzipFile(filename="", fileobj=output, mode="wb", mtime=timestamp, compresslevel=9) as compressed, tarfile.open(fileobj=compressed, mode="w|", format=tarfile.PAX_FORMAT) as tar:
+            for name, content in contents.items():
+                entry = tarfile.TarInfo(prefix + "/" + name)
+                entry.size = len(content)
+                entry.mtime = timestamp
+                entry.mode = file_mode(name)
+                entry.uid = entry.gid = 0
+                entry.uname = entry.gname = "root"
+                tar.addfile(entry, io.BytesIO(content))
     temporary.replace(destination)
     print(f"Created {destination.name}: {destination.stat().st_size:,} bytes, {len(sources)} files")
 
@@ -117,28 +237,35 @@ def main() -> None:
     selection.add_argument("--binary-only", action="store_true")
     parser.add_argument("--tag", help="Require an exact vX.Y.Z version match")
     arguments = parser.parse_args()
-    architecture, machine = TARGETS[arguments.target]
+    info = TARGETS[arguments.target]
     version = version_from_project()
     if arguments.tag:
         validate_tag(arguments.tag, version)
     if not (ROOT / "THIRD_PARTY_NOTICES.md").is_file():
         raise RuntimeError("Complete dependency notices before packaging")
-    release = f"mihomo-web-panel-{version}-linux-{architecture}"
+    release = release_prefix(version, arguments.target)
     timestamp = build_timestamp()
     distribution = ROOT / "dist"
     distribution.mkdir(exist_ok=True)
     outputs = []
     if not arguments.source_only:
         binary_sources = {name: ROOT / name for name in SHARED_FILES}
-        for binary in ("mihomo-web-panel", "mihomo-web-helper"):
+        binaries = [binary_name(arguments.target)]
+        if info["platform"] == "linux":
+            binaries.append("mihomo-web-helper")
+        for binary in binaries:
             file = ROOT / "target" / arguments.target / "release" / binary
-            verify_elf(file, machine)
-            binary_sources["bin/" + binary] = file
-        for folder in ("deploy", "docs", "third_party"):
+            validate_binary(file.read_bytes(), arguments.target)
+            binary_sources[binary] = file
+        for folder in ("docs", "third_party"):
             binary_sources.update(files_under(folder))
-        for name in ("install.sh", "uninstall.sh"):
-            binary_sources["scripts/" + name] = ROOT / "scripts" / name
-        binary_archive = distribution / (release + ".tar.gz")
+        if info["platform"] == "linux":
+            binary_sources.update(files_under("deploy"))
+            for name in ("install.sh", "uninstall.sh"):
+                binary_sources["scripts/" + name] = ROOT / "scripts" / name
+        elif info["platform"] == "macos":
+            binary_sources["Start.command"] = ROOT / "scripts/start-macos.command"
+        binary_archive = distribution / release_name(version, arguments.target)
         archive(binary_archive, release, binary_sources, timestamp)
         outputs.append(binary_archive)
     if not arguments.binary_only:

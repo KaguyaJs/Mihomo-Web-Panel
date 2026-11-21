@@ -11,6 +11,7 @@
 | 前端单元 | 初始化、登录、节点操作、账户和服务设置、API 状态处理 |
 | Playwright | 首次配置、登录、实际 API 选择和测速、凭据隔离、设置、密码、移动布局、主题、日志和离线状态 |
 | systemd | 安装、非 root 主进程、Socket 激活、UID 检查、固定命令、自启、升级保留配置和默认卸载保留数据 |
+| 独立启动 | 用户目录与便携模式、中文和空格路径、内嵌网页、初始化、权限、单实例、持久化 Session / 设置和正常关闭 |
 | 发布工具 | 静态 ELF 和架构、版本标签、完整归档、文件权限、SHA256、可重复归档及源码隔离 |
 | 仓库校验 | 文档链接、版本一致性、禁止的本地路径和凭据、运行数据隔离 |
 
@@ -52,7 +53,9 @@ sudo python3 tests/systemd_smoke.py
 
 ## CI 与发行版
 
-CI 在 Linux 和 Windows 运行核心检查，并对声明的最低 Rust 版本进行编译验证。Release 使用同一测试工作流，在 x86_64 和 ARM64 原生 runner 构建 musl 静态程序，执行目标平台测试及真实 systemd 验证后才发布文件。
+CI 在 Linux、Windows 和 macOS 运行核心检查，并对声明的最低 Rust 版本进行编译验证。Release 使用同一测试工作流，在 Linux x86_64 / ARM64、Windows x64、macOS Intel / Apple Silicon 原生 runner 构建并测试实际程序。五个二进制归档都必须经过实际解压运行、私密权限、初始化、API、重启持久化和 SHA256 检查；Linux 另执行真实 systemd 验证。所有要求通过后才发布文件。
+
+直接运行检查使用 `python3 tests/standalone_smoke.py`，发布归档检查使用 `python3 tests/standalone_smoke.py --target TARGET`。这些命令启动测试 Mock，测试数据和进程在结束后清理。Windows 对实际文件的 ACL 进行检查；Linux / macOS 验证 Unix 权限。
 
 发布失败时，GitHub Actions 提供对应阶段的日志；浏览器失败保留截图和 trace。流程说明见 [发布文档](releasing.md)。
 

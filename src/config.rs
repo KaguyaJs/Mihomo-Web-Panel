@@ -9,7 +9,7 @@ use std::{
 };
 use url::{Host, Url};
 
-#[derive(Clone, Deserialize)]
+#[derive(Clone, Deserialize, Serialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct Config {
     pub listen: SocketAddr,
@@ -73,7 +73,15 @@ impl Config {
         if content.len() > 65536 {
             bail!("configuration is too large")
         }
-        let config: Self = toml::from_str(&content).context("invalid configuration")?;
+        let mut config: Self = toml::from_str(&content).context("invalid configuration")?;
+        // A configured relative data path travels with its configuration file,
+        // independent of the terminal or launcher's working directory.
+        if config.data_dir.is_relative() {
+            config.data_dir = path
+                .parent()
+                .unwrap_or_else(|| Path::new("."))
+                .join(&config.data_dir);
+        }
         config.validate()?;
         Ok(config)
     }
@@ -196,6 +204,8 @@ pub fn private_dir(path: &Path) -> anyhow::Result<()> {
         use std::os::unix::fs::PermissionsExt;
         fs::set_permissions(path, fs::Permissions::from_mode(0o700))?;
     }
+    #[cfg(windows)]
+    crate::windows::restrict_path(path, true)?;
     Ok(())
 }
 
@@ -205,10 +215,8 @@ pub fn private_file(path: &Path) -> anyhow::Result<()> {
         use std::os::unix::fs::PermissionsExt;
         fs::set_permissions(path, fs::Permissions::from_mode(0o600))?;
     }
-    #[cfg(not(unix))]
-    {
-        let _ = path;
-    }
+    #[cfg(windows)]
+    crate::windows::restrict_path(path, false)?;
     Ok(())
 }
 
@@ -223,6 +231,7 @@ pub fn atomic_private_write(path: &Path, content: &[u8]) -> anyhow::Result<()> {
     }
     let result = (|| -> anyhow::Result<()> {
         let mut file = options.open(&temporary)?;
+        private_file(&temporary)?;
         file.write_all(content)?;
         file.sync_all()?;
         fs::rename(&temporary, path)?;

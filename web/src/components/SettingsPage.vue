@@ -585,12 +585,12 @@ async function toggleAutostart() {
                 "权限辅助程序未能返回状态。请检查安装和服务日志。"
               }}
             </p>
-            <p>
+            <p v-if="service?.platform === 'linux'">
               请查看项目中的 Linux 安装指南，安装 systemd
               服务及专用权限辅助程序。
             </p>
           </div>
-          <div class="settings-restart-note">
+          <div class="settings-restart-note" v-if="service?.platform === 'linux'">
             <ShieldCheck :size="17" /><span
               >主服务以普通用户运行。开机自启仅通过受限辅助程序控制本项目服务。</span
             >

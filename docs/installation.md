@@ -9,8 +9,8 @@ Linux、systemd 249+、已有运行中的 Mihomo、服务器 SSH 或控制台访
 ## 安装
 
 ```bash
-tar -xzf mihomo-web-panel-0.1.0-linux-x86_64.tar.gz
-cd mihomo-web-panel-0.1.0-linux-x86_64
+tar -xzf mihomo-web-panel-0.2.0-linux-x86_64.tar.gz
+cd mihomo-web-panel-0.2.0-linux-x86_64
 sudo bash scripts/install.sh --origin https://panel.example.com
 sudo systemctl is-active mihomo-web.service
 sudo systemctl is-active mihomo-web-helper.socket
@@ -57,7 +57,7 @@ sudo systemctl start mihomo-web.service
 先备份，再在新发布包目录重新运行安装器。已有配置不会被 `--origin` 覆盖；管理员、后端与 SQLite 迁移数据保留。
 
 ```bash
-cd mihomo-web-panel-0.1.0-linux-x86_64
+cd mihomo-web-panel-0.2.0-linux-x86_64
 sudo bash scripts/install.sh --binary-dir bin
 sudo journalctl -u mihomo-web.service -n 50 --no-pager
 ```

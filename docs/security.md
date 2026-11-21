@@ -37,11 +37,15 @@ Session Cookie 使用 HttpOnly、SameSite=Strict、Path=/；生产 HTTPS 必须 
 
 ## systemd 最小权限
 
-主程序拒绝在 Linux 上以 root 身份运行。unit 使用独立 `mihomo-web` 用户、空 capability、NoNewPrivileges、ProtectSystem=strict、ProtectHome、PrivateTmp、有限地址族、系统调用过滤及唯一持久可写目录。
+主程序在 Linux 和 macOS 上拒绝 root 身份运行。Linux unit 使用独立 `mihomo-web` 用户、空 capability、NoNewPrivileges、ProtectSystem=strict、ProtectHome、PrivateTmp、有限地址族、系统调用过滤及唯一持久可写目录。
 
 root helper 独立运行，通过 root:mihomo-web 0660 Socket 接收消息，并检查操作系统提供的 peer UID。应用还验证 helper peer 是 root。协议只接受 `enable`、`disable`、`status`，且目标 unit 固定为 `mihomo-web.service`。执行 `/usr/bin/systemctl` 的固定参数数组，不使用 shell、用户输入命令或 NOPASSWD。
 
 本地 root、拥有平台数据目录权限的用户与已认证管理员属于受信任的权限主体。平台不是对已失陷服务器的防护；数据库与备份包含内核 Secret，因此必须保护服务器账户、文件与备份权限。
+
+独立启动默认仅监听回环 HTTP，配置和数据存于当前用户的应用目录。Linux / macOS 私密目录权限为 0700、私密文件为 0600；Windows 数据目录和私密文件禁用继承共享访问，仅保留当前用户、Administrators 与 SYSTEM。便携模式同样保护数据目录。Windows 使用原生 Win32 ACL API，不执行字符串拼接的权限命令。
+
+一次性初始化令牌仅在交互式独立启动控制台或显式 `bootstrap-token` 命令中显示，不进入服务日志和默认重定向输出。浏览器启动只提交经过校验的 HTTP(S) 入口，不携带令牌或 Controller Secret。
 
 ## 安全部署检查
 

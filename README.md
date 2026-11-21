@@ -4,7 +4,7 @@
 [![Release](https://img.shields.io/github/v/release/KaguyaJs/mihomo-web-panel)](https://github.com/KaguyaJs/mihomo-web-panel/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-独立的 Mihomo Web 管理平台。Rust 后端负责身份认证、会话管理和 Controller API 调用，Vue 界面嵌入可执行文件，支持桌面和手机访问。生产运行无需 Node.js。
+独立的 Mihomo Web 管理平台。Rust 后端负责身份认证、会话管理和 Controller API 调用，Vue 界面嵌入可执行文件，支持桌面和手机访问。提供 Linux、Windows、macOS 的独立二进制版本，运行时无需 Rust、Node.js 或额外的 Web 服务器。
 
 本平台管理**已经安装并运行的 Mihomo**，不包含、不下载、不安装、不启动、不替换 Mihomo 内核。
 
@@ -39,7 +39,22 @@
 - systemd 开机自启控制；主服务非 root，独立 helper 仅允许固定服务的 enable / disable / status。
 - IPv4 / IPv6，HTTPS 反向代理，SQLite WAL、事务和编号迁移。
 
-## 安装
+## 下载与直接运行
+
+从 [GitHub Releases](https://github.com/KaguyaJs/mihomo-web-panel/releases/latest) 下载对应平台的发行包，解压后直接运行：
+
+| 平台 | 发行包后缀 | 启动方式 |
+| --- | --- | --- |
+| Windows x64 | `windows-x86_64.zip` | 双击 `mihomo-web-panel.exe` |
+| macOS Apple Silicon | `macos-aarch64.tar.gz` | 双击 `Start.command` 或运行 `./mihomo-web-panel` |
+| macOS Intel | `macos-x86_64.tar.gz` | 双击 `Start.command` 或运行 `./mihomo-web-panel` |
+| Linux x64 / ARM64 | `linux-x86_64.tar.gz` / `linux-aarch64.tar.gz` | 运行 `./mihomo-web-panel` |
+
+默认使用当前用户的配置和数据目录，监听 `http://127.0.0.1:8787`。首次交互式启动显示一次性初始化令牌，并打开浏览器；填写管理员和已有 Controller 后即可使用。以后启动保留账户和设置。
+
+`--portable` 将配置与数据放在可执行文件旁，`paths` 查看位置，`--no-open` 禁用自动打开浏览器。Windows 最低 Windows 10 / Server 2016，macOS 最低 macOS 13。macOS 使用 ad-hoc 签名，尚未通过 Apple 公证，首次启动可能需要在系统设置中允许。校验、各平台步骤、数据备份和升级见 [直接运行说明](docs/standalone.md)。
+
+## Linux 服务器安装
 
 推荐 Linux、systemd 249+，例如 Debian 12+ 或 Ubuntu 22.04+。从 [GitHub Releases](https://github.com/KaguyaJs/mihomo-web-panel/releases/latest) 下载发布包和 `SHA256SUMS`：
 
@@ -48,26 +63,26 @@
 | Intel / AMD 64 位，`uname -m` 为 `x86_64` | `linux-x86_64.tar.gz` |
 | ARM64，`uname -m` 为 `aarch64` | `linux-aarch64.tar.gz` |
 
-以下以 `v0.1.0` 和 x86_64 为例：
+以下以 `v0.2.0` 和 x86_64 为例：
 
 ```bash
-curl -fLO https://github.com/KaguyaJs/mihomo-web-panel/releases/download/v0.1.0/mihomo-web-panel-0.1.0-linux-x86_64.tar.gz
-curl -fLO https://github.com/KaguyaJs/mihomo-web-panel/releases/download/v0.1.0/SHA256SUMS
+curl -fLO https://github.com/KaguyaJs/mihomo-web-panel/releases/download/v0.2.0/mihomo-web-panel-0.2.0-linux-x86_64.tar.gz
+curl -fLO https://github.com/KaguyaJs/mihomo-web-panel/releases/download/v0.2.0/SHA256SUMS
 ```
 
 私有仓库需要相应访问权限，可使用已登录的 GitHub CLI 下载同样的文件：
 
 ```bash
-gh release download v0.1.0 --repo KaguyaJs/mihomo-web-panel \
-  --pattern 'mihomo-web-panel-0.1.0-linux-x86_64.tar.gz' --pattern SHA256SUMS
+gh release download v0.2.0 --repo KaguyaJs/mihomo-web-panel \
+  --pattern 'mihomo-web-panel-0.2.0-linux-x86_64.tar.gz' --pattern SHA256SUMS
 ```
 
 下载后校验并安装：
 
 ```bash
 sha256sum --ignore-missing -c SHA256SUMS
-tar -xzf mihomo-web-panel-0.1.0-linux-x86_64.tar.gz
-cd mihomo-web-panel-0.1.0-linux-x86_64
+tar -xzf mihomo-web-panel-0.2.0-linux-x86_64.tar.gz
+cd mihomo-web-panel-0.2.0-linux-x86_64
 sha256sum -c SHA256SUMS
 sudo bash scripts/install.sh --origin https://panel.example.com
 sudo systemctl status mihomo-web.service --no-pager
@@ -144,13 +159,14 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-CI 检查 Linux 和 Windows、最低 Rust 版本、浏览器流程及真实 systemd 部署。测试使用独立 Mock 和临时数据，不访问真实 Mihomo。
+CI 检查 Linux、Windows 和 macOS、最低 Rust 版本、浏览器流程、真实独立启动及 systemd 部署。测试使用独立 Mock 和临时数据，不访问真实 Mihomo。
 
-推送与 `Cargo.toml`、前端版本一致的 `vX.Y.Z` 标签，或手动运行 Release 工作流，可以触发测试、Linux x86_64 / ARM64 静态构建、归档校验和 GitHub Releases 发布。发行版包含两个部署包、完整源码归档及 SHA256 校验文件。流程与重试说明见 [发布文档](docs/releasing.md)。
+推送与 `Cargo.toml`、前端版本一致的 `vX.Y.Z` 标签，或手动运行 Release 工作流，可以触发测试、五个平台目标的原生构建、实际归档启动校验和 GitHub Releases 发布。发行版包含五个二进制包、完整源码归档及 SHA256 校验文件。流程与重试说明见 [发布文档](docs/releasing.md)。
 
 ## 文档与贡献
 
 - [部署指南](docs/deployment-guide.md) · [安装、升级、备份与卸载](docs/installation.md)
+- [Windows / macOS / Linux 直接运行](docs/standalone.md)
 - [配置](docs/configuration.md) · [架构](docs/architecture.md) · [API](docs/api.md)
 - [安全模型](docs/security.md) · [漏洞报告](SECURITY.md)
 - [开发](docs/development.md) · [测试与验收](docs/test-report.md) · [发布](docs/releasing.md)

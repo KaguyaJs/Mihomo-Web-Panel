@@ -45,7 +45,7 @@ TLS Controller 需要有效证书，平台不会忽略证书校验。较早版�
 
 ## 开机自启不支持或失败
 
-Windows 开发环境与非 systemd 系统不支持。Linux 检查专用 Socket、helper、UID 与权限：
+Windows、macOS 和其他非 systemd 环境支持直接运行面板，但不支持网页中的 systemd 开机自启操作。Linux 检查专用 Socket、helper、UID 与权限：
 
 ```bash
 sudo systemctl status mihomo-web-helper.socket --no-pager

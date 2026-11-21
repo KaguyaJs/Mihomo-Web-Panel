@@ -1,6 +1,6 @@
 # 配置与数据存储
 
-使用 `--config /path/config.toml` 指定本地 TOML。开发环境见 `config.example.toml`；生产见 `deploy/config.production.toml`。
+无参数运行会在当前用户的应用目录生成配置和数据库。`--portable` 使用可执行文件旁的配置与数据；位置和参数见 [直接运行说明](standalone.md)。使用 `--config /path/config.toml` 加载已存在的 TOML，配置中的相对 `data_dir` 相对配置文件所在目录解析。开发环境见 `config.example.toml`；生产见 `deploy/config.production.toml`。
 
 | 字段 | 默认值 | 说明 |
 | --- | --- | --- |
@@ -52,4 +52,4 @@ sudo systemctl start mihomo-web.service
 
 SQLite WAL + FULL synchronous、5 个连接、5 秒 busy timeout、SQLx 编号迁移。初始化使用一次事务创建管理员、保存内核并消费令牌；配置存储使用事务。启动时恢复既有配置，升级不清空数据库。
 
-Session 数据库只保存令牌摘要。初始化令牌文件 0600、数据目录 0700；成功消费后文件删除，数据库已消费状态立即生效。日志交给 journald，Windows 开发环境使用控制台；Windows 数据安全依赖本地用户目录 ACL，生产权限设计以 Linux 为准。
+Session 数据库只保存令牌摘要。Linux / macOS 初始化令牌文件 0600、数据目录 0700；Windows 私密文件和数据目录使用禁止继承共享权限的 ACL，仅当前用户、Administrators 和 SYSTEM 可访问。成功消费后令牌文件删除，数据库已消费状态立即生效。Linux 服务日志交给 journald，直接运行模式使用控制台。仅交互式独立启动显示一次性令牌，重定向输出和服务日志不包含令牌。

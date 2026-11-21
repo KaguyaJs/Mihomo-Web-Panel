@@ -49,7 +49,12 @@ fn unsupported() -> HelperStatus {
         supported: false,
         enabled: false,
         active: "unsupported".into(),
-        message: "开机自启控制需要 Linux systemd 和已安装的权限辅助程序，请按部署文档安装".into(),
+        message: if cfg!(target_os = "linux") {
+            "开机自启控制需要 systemd 和已安装的权限辅助程序，请按 Linux 部署文档安装"
+        } else {
+            "当前平台支持直接运行管理面板；开机自启控制仅适用于 Linux systemd 服务"
+        }
+        .into(),
     }
 }
 
