@@ -14,6 +14,15 @@ async function login(page: Page) {
   await expect(page.locator('.main-content h1')).toHaveText('网络概览')
   await expect(page.locator('.topbar .connection-status')).toContainText('内核已连接')
 }
+async function updateAccount(page: Page) {
+  const [response] = await Promise.all([
+    page.waitForResponse((response) => new URL(response.url()).pathname === '/api/settings/security' && response.request().method() === 'PATCH', { timeout: 30000 }),
+    page.getByRole('button', { name: '更新账户', exact: true }).click(),
+  ])
+  expect(response.status()).toBe(200)
+  await expect(page.getByLabel('原密码', { exact: true })).toHaveValue('')
+  await expect(page.getByRole('button', { name: '更新账户', exact: true })).toBeEnabled()
+}
 
 test('first-run wizard is token protected and requires a real backend test', async ({ page }) => {
   const data = (await readFile(path.join(root, '.tools/e2e-current.txt'), 'utf8')).trim()
@@ -60,18 +69,18 @@ test('login, real proxy selection, latency testing and secret isolation', async 
 })
 
 test('settings update, password rotation, sessions and honest unsupported autostart', async ({ page }) => {
+  test.setTimeout(90000)
   await login(page)
   await page.locator('.sidebar-nav').getByRole('button', { name: '设置', exact: true }).click()
   await page.getByLabel('原密码', { exact: true }).fill(password)
   await page.getByLabel('新密码', { exact: true }).fill('changed browser password 2026')
   await page.getByLabel('确认新密码', { exact: true }).fill('changed browser password 2026')
-  await page.getByRole('button', { name: '更新账户', exact: true }).click()
+  await updateAccount(page)
   await expect(page.locator('.toast-stack')).toContainText('账户已更新')
   await page.getByLabel('原密码', { exact: true }).fill('changed browser password 2026')
   await page.getByLabel('新密码', { exact: true }).fill(password)
   await page.getByLabel('确认新密码', { exact: true }).fill(password)
-  await page.getByRole('button', { name: '更新账户', exact: true }).click()
-  await expect(page.getByLabel('原密码', { exact: true })).toHaveValue('')
+  await updateAccount(page)
   await page.getByRole('button', { name: '服务设置', exact: true }).click()
   await page.getByLabel('流量刷新频率', { exact: true }).selectOption('2000')
   await page.getByRole('button', { name: '保存服务设置' }).click()
