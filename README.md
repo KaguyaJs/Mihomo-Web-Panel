@@ -53,6 +53,18 @@
 ```bash
 curl -fLO https://github.com/KaguyaJs/mihomo-web-panel/releases/download/v0.1.0/mihomo-web-panel-0.1.0-linux-x86_64.tar.gz
 curl -fLO https://github.com/KaguyaJs/mihomo-web-panel/releases/download/v0.1.0/SHA256SUMS
+```
+
+私有仓库需要相应访问权限，可使用已登录的 GitHub CLI 下载同样的文件：
+
+```bash
+gh release download v0.1.0 --repo KaguyaJs/mihomo-web-panel \
+  --pattern 'mihomo-web-panel-0.1.0-linux-x86_64.tar.gz' --pattern SHA256SUMS
+```
+
+下载后校验并安装：
+
+```bash
 sha256sum --ignore-missing -c SHA256SUMS
 tar -xzf mihomo-web-panel-0.1.0-linux-x86_64.tar.gz
 cd mihomo-web-panel-0.1.0-linux-x86_64
