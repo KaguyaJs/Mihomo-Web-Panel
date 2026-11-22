@@ -1,4 +1,4 @@
-"""Verify an actual standalone executable, its archive and persisted first-run state.
+"""Verify a directly downloaded executable, its licenses and persisted first-run state.
 
 Runs as a regular user on Linux, Windows or macOS. Only a loopback Mock is started;
 this test never installs or starts Mihomo or a system service.
@@ -23,8 +23,8 @@ from contextlib import closing
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-PACKAGE = runpy.run_path(str(ROOT / "scripts/package-release.py"))
-VERIFY = runpy.run_path(str(ROOT / "scripts/verify-archives.py"))
+PACKAGE = runpy.run_path(str(ROOT / "scripts/prepare-release.py"))
+VERIFY = runpy.run_path(str(ROOT / "scripts/verify-release.py"))
 SECRET = "mock-controller-secret-for-tests"
 PASSWORD = "standalone integration test password"
 
@@ -134,19 +134,12 @@ def main() -> None:
         program.mkdir()
         unrelated.mkdir()
         if arguments.target:
-            prefix = PACKAGE["release_prefix"](version, arguments.target)
-            archive = ROOT / "dist" / PACKAGE["release_name"](version, arguments.target)
-            VERIFY["inspect_archive"](archive, prefix, arguments.target)
-            contents = VERIFY["read_archive"](archive, prefix)
-            for name, content in contents.items():
-                destination = program / name
-                destination.parent.mkdir(parents=True, exist_ok=True)
-                destination.write_bytes(content)
-                if os.name != "nt":
-                    destination.chmod(PACKAGE["file_mode"](name))
-        else:
-            shutil.copy2(binary_input, program / binary_input.name)
+            binary_input = ROOT / "dist" / PACKAGE["release_name"](version, arguments.target)
+            VERIFY["inspect_binary"](binary_input, arguments.target)
+        shutil.copy2(binary_input, program / binary_input.name)
         binary = program / binary_input.name
+        if os.name != "nt":
+            binary.chmod(0o755)
         assert version in subprocess.check_output([str(binary), "--version"], text=True)
         environment = {**os.environ, "HOME": str(root / "user"), "LOCALAPPDATA": str(root / "local-data"),
                        "XDG_CONFIG_HOME": str(root / "xdg-config"), "XDG_DATA_HOME": str(root / "xdg-data")}
@@ -159,6 +152,17 @@ def main() -> None:
         data = Path(managed["data"])
         assert config.is_relative_to(root) and data.is_relative_to(root)
         assert not config.exists() and not data.exists(), "paths command modified the filesystem"
+        # The sole executable carries all notices, with no adjacent license files,
+        # no initialization, and no dependence on a valid configuration directory.
+        licenses = subprocess.run([str(binary), "licenses"], cwd=unrelated,
+                                  env={**environment, "HOME": "", "LOCALAPPDATA": ""}, capture_output=True)
+        assert licenses.returncode == 0
+        assert b"Copyright (c) 2026 mihomo-web-panel contributors" in licenses.stdout
+        assert b"Permission is hereby granted" in licenses.stdout
+        assert b"THIRD_PARTY_NOTICES.md" in licenses.stdout
+        assert b"third_party/licenses/rust/argon2-" in licenses.stdout
+        assert b"third_party/licenses/npm/vue-" in licenses.stdout
+        assert not config.exists() and not data.exists(), "licenses command initialized the application"
         log_path = root / "startup.log"
         children = []
         with log_path.open("wb") as log:
@@ -239,7 +243,7 @@ def main() -> None:
                 log.flush()
                 assert token.encode() not in log_path.read_bytes()
                 assert SECRET.encode() not in log_path.read_bytes()
-                print(f"STANDALONE_VALIDATION_PASSED: {platform}, embedded UI, default/portable paths, private files, initialization, API, persistent session/settings and graceful restart")
+                print(f"STANDALONE_VALIDATION_PASSED: {platform}, single executable, embedded UI and licenses, default/portable paths, private files, initialization, API, persistent session/settings and graceful restart")
             finally:
                 for child in reversed(children):
                     if child.poll() is None:

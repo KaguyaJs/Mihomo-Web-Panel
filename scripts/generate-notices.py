@@ -8,11 +8,13 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import runpy
 import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DESTINATION = ROOT / "third_party" / "licenses"
+POLICY = runpy.run_path(str(ROOT / "scripts/check-repository.py"))
 
 
 def license_files(source: Path, explicit: str | None = None) -> list[Path]:
@@ -42,7 +44,9 @@ def collect(kind: str, name: str, version: str, source: Path, explicit: str | No
         if not destination.resolve().is_relative_to(DESTINATION.resolve()):
             raise RuntimeError("License destination is outside the project")
         destination.parent.mkdir(parents=True, exist_ok=True)
-        destination.write_bytes(original.read_bytes())
+        content = original.read_bytes()
+        POLICY["check_private_content"](destination.relative_to(ROOT).as_posix(), content)
+        destination.write_bytes(content)
         links.append(destination.relative_to(ROOT).as_posix())
     if not links and folder.is_dir():
         # A few workspace packages omit their root license when publishing.
@@ -57,8 +61,11 @@ def cell(value: str | None) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--target", default="x86_64-unknown-linux-musl")
+    parser.add_argument("--target", help="Target triple; defaults to the current Rust host")
     arguments = parser.parse_args()
+    if arguments.target is None:
+        host = subprocess.check_output(["rustc", "-vV"], cwd=ROOT, text=True, encoding="utf-8")
+        arguments.target = next(line.removeprefix("host: ") for line in host.splitlines() if line.startswith("host: "))
     metadata = json.loads(subprocess.check_output(
         ["cargo", "metadata", "--format-version", "1", "--locked", "--filter-platform", arguments.target],
         cwd=ROOT, text=True, encoding="utf-8",
@@ -121,7 +128,7 @@ def main() -> None:
         "`libsqlite3-sys` 链接的 SQLite 源代码属于公有领域，参见 [SQLite 官方版权说明](https://www.sqlite.org/copyright.html)。",
         "Rust TLS、压缩等库内嵌的第三方声明一并从依赖原包收集；此目录不包含 Mihomo 内核或其源码。", "",
     ])
-    (ROOT / "THIRD_PARTY_NOTICES.md").write_text("\n".join(lines), encoding="utf-8")
+    (ROOT / "THIRD_PARTY_NOTICES.md").write_bytes("\n".join(lines).encode("utf-8"))
     print(f"Collected licenses: {len(reachable)} Rust dependencies, {frontend_count} frontend dependencies")
     if missing:
         raise RuntimeError("Missing dependency license text: " + ", ".join(missing))

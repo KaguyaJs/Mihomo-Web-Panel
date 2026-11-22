@@ -20,6 +20,8 @@ flowchart TD
 
 `runtime.rs` 为 Linux、Windows 和 macOS 提供用户数据目录、便携模式、配置首次生成和浏览器启动。Windows 私密目录及文件由 `windows.rs` 使用原生 ACL API 保护。直接运行不需要外部前端目录；只有 Linux systemd 安装使用独立 helper。
 
+`licenses.rs` 内嵌项目许可、目标依赖清单与完整许可原文，`licenses` 命令独立于应用配置和数据库。发行版为每个平台的单个主程序文件；源码、部署脚本与配置示例保存在对应 Git 标签中。
+
 Vue 3 + TypeScript 前端在 `web/`，所有数据来自同源 `/api`。生产资源在 Rust 编译时嵌入，主程序运行无需 Node.js。只有主题偏好存入 localStorage；Cookie 为 HttpOnly；CSRF 保留在内存中。浏览器无法读取保存的 Controller 地址与 Secret，设置页仅允许重新输入。
 
 初始化以单次数据库事务同时创建管理员、保存经验证的后端并消费初始化令牌。没有可抢占账户的独立注册接口。配置保存到 SQLite 事务；监听设置在重启后生效，超时和采样设置动态生效。Session 撤销及过期会关闭已有 WebSocket。

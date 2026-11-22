@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import json
 import re
-import runpy
 import subprocess
 import tomllib
 from pathlib import Path
@@ -16,6 +15,19 @@ PRIVATE_CONTENT = [
     re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----"),
 ]
 FORBIDDEN_PARTS = {".tools", "target", "node_modules", "playwright-report", "test-results", "__pycache__"}
+SOURCE_DIRECTORIES = ("src", "migrations", "tests", "examples", "scripts", "deploy", "docs", "third_party", ".github", ".cargo", "web/src", "web/e2e", "web/public")
+
+
+def source_names() -> list[str]:
+    if (ROOT / ".git").exists():
+        return [name for name in subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT).decode().split("\0") if name]
+    names = {file.name for file in ROOT.iterdir() if file.is_file() and file.name != "SHA256SUMS"}
+    names.update("web/" + file.name for file in (ROOT / "web").iterdir() if file.is_file())
+    for folder in SOURCE_DIRECTORIES:
+        for file in (ROOT / folder).rglob("*"):
+            if file.is_symlink() or (file.is_file() and "__pycache__" not in file.parts and file.suffix != ".pyc"):
+                names.add(file.relative_to(ROOT).as_posix())
+    return sorted(names)
 
 
 def check_private_content(name: str, data: bytes) -> None:
@@ -31,7 +43,7 @@ def check_private_content(name: str, data: bytes) -> None:
 
 def check_source_name(name: str) -> None:
     file = Path(name)
-    if FORBIDDEN_PARTS.intersection(file.parts) or name.startswith(("dist/", "data/")):
+    if FORBIDDEN_PARTS.intersection(file.parts) or name.startswith(("dist/", "data/", "web/dist/")):
         raise RuntimeError(f"Runtime or generated file is tracked: {name}")
     if (file.name == "config.toml" and file.as_posix() != ".cargo/config.toml") or file.name in ("config.lock", "instance.lock", "bootstrap-token") or file.name.startswith(".env") or file.suffix in (".db", ".log", ".key", ".pem", ".p12", ".pfx", ".pyc") or file.name.endswith((".db-wal", ".db-shm", ".tsbuildinfo")):
         raise RuntimeError(f"Private runtime file is tracked: {name}")
@@ -55,11 +67,7 @@ def versions() -> str:
 
 def main() -> None:
     version = versions()
-    if (ROOT / ".git").exists():
-        names = [name for name in subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT).decode().split("\0") if name]
-    else:
-        package = runpy.run_path(str(ROOT / "scripts/package-release.py"))
-        names = list(package["source_inputs"]())
+    names = source_names()
     if not names:
         raise RuntimeError("No source files to validate")
     for name in names:

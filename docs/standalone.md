@@ -1,33 +1,31 @@
 # 直接运行二进制程序
 
-从 [GitHub Releases](https://github.com/KaguyaJs/mihomo-web-panel/releases/latest) 下载对应平台的发行包和 `SHA256SUMS`。程序已内嵌网页、SQLite 和必要的应用依赖，运行时不需要 Rust、Node.js、npm、Python 或额外的 Web 服务器。已有 Mihomo 的 Controller 必须由原有方式保持运行。
+从 [GitHub Releases](https://github.com/KaguyaJs/mihomo-web-panel/releases/latest) 直接下载对应平台的可执行文件和 `SHA256SUMS`。程序内嵌网页、SQLite、项目许可和第三方许可文本，运行时不需要 Rust、Node.js、npm、Python 或额外的 Web 服务器。已有 Mihomo 的 Controller 必须由原有方式保持运行。
 
-| 系统 | CPU / 最低系统 | 发行包后缀 | 启动入口 |
+| 系统 | CPU / 最低系统 | 可执行文件后缀 | 启动方式 |
 | --- | --- | --- | --- |
-| Windows | x64，Windows 10 / Server 2016 或更新版本 | `windows-x86_64.zip` | `mihomo-web-panel.exe` |
-| macOS | Apple Silicon，macOS 13 或更新版本 | `macos-aarch64.tar.gz` | `Start.command` 或 `mihomo-web-panel` |
-| macOS | Intel，macOS 13 或更新版本 | `macos-x86_64.tar.gz` | `Start.command` 或 `mihomo-web-panel` |
-| Linux | x64 | `linux-x86_64.tar.gz` | `mihomo-web-panel` |
-| Linux | ARM64 | `linux-aarch64.tar.gz` | `mihomo-web-panel` |
+| Windows | x64，Windows 10 / Server 2016 或更新版本 | `windows-x86_64.exe` | 双击 `.exe` |
+| macOS | Apple Silicon，macOS 13 或更新版本 | `macos-aarch64` | 设置执行权限后在 Terminal 启动 |
+| macOS | Intel，macOS 13 或更新版本 | `macos-x86_64` | 设置执行权限后在 Terminal 启动 |
+| Linux | x64 | `linux-x86_64` | 设置执行权限后运行 |
+| Linux | ARM64 | `linux-aarch64` | 设置执行权限后运行 |
 
 Windows 包静态链接 Microsoft C 运行库；无需单独安装 Visual C++ Redistributable。macOS 使用系统自带库，Linux 使用 musl 静态程序。当前不提供 Windows ARM64 专用版本。
 
-私有仓库需要相应访问权限，可使用已登录的 GitHub CLI。以下以 Windows v0.2.0 为例：
+私有仓库需要相应访问权限，可使用已登录的 GitHub CLI。以下以 Windows v0.3.0 为例：
 
 ```bash
-gh release download v0.2.0 --repo KaguyaJs/mihomo-web-panel \
-  --pattern 'mihomo-web-panel-0.2.0-windows-x86_64.zip' --pattern SHA256SUMS
+gh release download v0.3.0 --repo KaguyaJs/mihomo-web-panel \
+  --pattern 'mihomo-web-panel-0.3.0-windows-x86_64.exe' --pattern SHA256SUMS
 ```
 
 ## Windows
 
-解压 ZIP，双击 `mihomo-web-panel.exe`。程序显示本地控制台，首次运行会显示一次性初始化令牌，并在交互式启动时打开浏览器。也可以在 PowerShell 运行：
+下载后双击 `mihomo-web-panel-0.3.0-windows-x86_64.exe`。程序显示本地控制台，首次运行会显示一次性初始化令牌，并在交互式启动时打开浏览器。也可以在 PowerShell 校验并启动：
 
 ```powershell
-Get-FileHash .\mihomo-web-panel-0.2.0-windows-x86_64.zip -Algorithm SHA256
-Expand-Archive .\mihomo-web-panel-0.2.0-windows-x86_64.zip -DestinationPath .\panel
-cd .\panel\mihomo-web-panel-0.2.0-windows-x86_64
-.\mihomo-web-panel.exe
+Get-FileHash .\mihomo-web-panel-0.3.0-windows-x86_64.exe -Algorithm SHA256
+.\mihomo-web-panel-0.3.0-windows-x86_64.exe
 ```
 
 将 `Get-FileHash` 的结果与 `SHA256SUMS` 中同名文件的值比较。正常运行无需管理员权限；使用支持 ACL 的文件系统存放私密数据。
@@ -37,13 +35,12 @@ cd .\panel\mihomo-web-panel-0.2.0-windows-x86_64
 Apple Silicon 示例：
 
 ```bash
-shasum -a 256 mihomo-web-panel-0.2.0-macos-aarch64.tar.gz
-tar -xzf mihomo-web-panel-0.2.0-macos-aarch64.tar.gz
-cd mihomo-web-panel-0.2.0-macos-aarch64
-./mihomo-web-panel
+shasum -a 256 mihomo-web-panel-0.3.0-macos-aarch64
+chmod +x mihomo-web-panel-0.3.0-macos-aarch64
+./mihomo-web-panel-0.3.0-macos-aarch64 --open
 ```
 
-将校验值与 `SHA256SUMS` 中同名文件比较。Finder 用户可双击 `Start.command`，它在 Terminal 中保留启动控制台并打开浏览器。Intel Mac 选择 `macos-x86_64` 包。不要使用 sudo 启动主程序。
+将校验值与 `SHA256SUMS` 中同名文件比较。Intel Mac 选择后缀为 `macos-x86_64` 的程序。通过 Terminal 运行并保留启动控制台；不要使用 sudo 启动主程序。
 
 macOS 程序使用 ad-hoc 签名，尚未使用 Apple Developer ID 签名和公证。首次启动可能被 Gatekeeper 拦截；核对下载来源和校验值后，按 macOS 提示在“系统设置 → 隐私与安全性”中允许该程序。自动化测试验证的是实际程序运行，不代表通过 Apple 公证。
 
@@ -51,12 +48,13 @@ macOS 程序使用 ad-hoc 签名，尚未使用 Apple Developer ID 签名和公�
 
 ```bash
 sha256sum --ignore-missing -c SHA256SUMS
-tar -xzf mihomo-web-panel-0.2.0-linux-x86_64.tar.gz
-cd mihomo-web-panel-0.2.0-linux-x86_64
-./mihomo-web-panel
+chmod +x mihomo-web-panel-0.3.0-linux-x86_64
+./mihomo-web-panel-0.3.0-linux-x86_64
 ```
 
-使用普通用户运行。带桌面环境时程序可以打开默认浏览器；没有桌面的机器可通过 `--no-open` 保持控制台运行。长期服务器部署可使用发行包内的 systemd 安装器，详见 [Linux 部署](deployment-guide.md)。
+使用普通用户运行。带桌面环境时程序可以打开默认浏览器；没有桌面的机器可通过 `--no-open` 保持控制台运行。完整 systemd 服务及专用 helper 从对应源码标签构建，详见 [Linux 安装](installation.md)。
+
+核对校验值后，可以把文件重命名为 `mihomo-web-panel`，Windows 为 `mihomo-web-panel.exe`。以下通用命令使用这个简短名称；重命名不改变默认用户数据目录。
 
 ## 初始化与日常启动
 
@@ -92,7 +90,7 @@ Windows 将可执行名替换为 `.\mihomo-web-panel.exe`。初始化完成后�
 ./mihomo-web-panel --portable bootstrap-token
 ```
 
-升级便携版本时保留 `config.toml`、`config.lock` 和整个 `data` 目录，只替换程序与发行文档。数据库和备份包含 Controller Secret，保护其访问权限。macOS 的启动脚本默认使用用户模式，便携模式使用上述终端命令。
+升级便携版本时保留 `config.toml`、`config.lock` 和整个 `data` 目录，只替换可执行文件。数据库和备份包含 Controller Secret，保护其访问权限。用户模式下，程序可以移动或改名，配置和数据继续存放在原来的应用目录。
 
 `--config` 加载**已存在**的配置文件。配置中的相对 `data_dir` 相对配置文件所在目录解析。`--portable` 和 `--config` 互斥；指定文件缺失或无效时程序会报错，不自动替换它。
 
@@ -101,9 +99,12 @@ Windows 将可执行名替换为 `.\mihomo-web-panel.exe`。初始化完成后�
 ./mihomo-web-panel --open
 ./mihomo-web-panel --no-open
 ./mihomo-web-panel --help
+./mihomo-web-panel licenses
 ```
 
 无参数交互式启动自动打开浏览器；`serve`、重定向输出或 `--no-open` 适合脚本运行，`--open` 可以显式打开浏览器。
+
+`licenses` 输出内嵌的项目许可、第三方清单及完整许可原文，不读取配置、不初始化数据，也不连接 Controller。文档与配置示例在对应版本的 GitHub 源码中查看。
 
 ## 平台功能范围
 

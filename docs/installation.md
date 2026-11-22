@@ -4,19 +4,26 @@
 
 Linux、systemd 249+、已有运行中的 Mihomo、服务器 SSH 或控制台访问权限。安装器使用 Bash、systemctl、systemd-tmpfiles、useradd/groupadd、getent、runuser 等常见系统工具。建议 Debian 12 / Ubuntu 22.04 或更新版本。
 
-运行时只需要发布包中的主程序及权限辅助程序；前端已经嵌入。SQLite 随 Rust 程序链接，不依赖外部数据库进程。HTTPS 由 Caddy 或 Nginx 提供。
+直接运行的发行版只需下载主程序，见 [单文件启动](standalone.md)。本文的完整 systemd/helper 安装使用对应源码标签构建，需要 Rust、Node.js、Python 和 C 工具链。安装完成后，运行时只使用主程序与专用 helper；前端和 SQLite 均内嵌。HTTPS 由 Caddy 或 Nginx 提供。
 
 ## 安装
 
 ```bash
-tar -xzf mihomo-web-panel-0.2.0-linux-x86_64.tar.gz
-cd mihomo-web-panel-0.2.0-linux-x86_64
-sudo bash scripts/install.sh --origin https://panel.example.com
+git clone --branch v0.3.0 --depth 1 https://github.com/KaguyaJs/mihomo-web-panel.git
+cd mihomo-web-panel
+sudo apt-get update
+sudo apt-get install -y musl-tools
+rustup target add x86_64-unknown-linux-musl
+npm --prefix web ci
+npm --prefix web run build
+python3 scripts/build-release.py --target x86_64-unknown-linux-musl
+sudo bash scripts/install.sh --origin https://panel.example.com \
+  --binary-dir target/x86_64-unknown-linux-musl/release
 sudo systemctl is-active mihomo-web.service
 sudo systemctl is-active mihomo-web-helper.socket
 ```
 
-从源码构建时可指定二进制所在目录：
+ARM64 主机将目标替换为 `aarch64-unknown-linux-musl`。普通的本机 Cargo release 构建也可指定二进制所在目录：
 
 ```bash
 sudo bash scripts/install.sh --origin https://panel.example.com --binary-dir target/release
@@ -54,15 +61,16 @@ sudo systemctl start mihomo-web.service
 
 ## 升级
 
-先备份，再在新发布包目录重新运行安装器。已有配置不会被 `--origin` 覆盖；管理员、后端与 SQLite 迁移数据保留。
+先备份，再获取新版本源码标签，重新构建主程序和 helper，在新版本源码目录运行安装器。已有配置不会被 `--origin` 覆盖；管理员、后端与 SQLite 迁移数据保留。
 
 ```bash
-cd mihomo-web-panel-0.2.0-linux-x86_64
-sudo bash scripts/install.sh --binary-dir bin
+sudo bash scripts/install.sh --binary-dir target/x86_64-unknown-linux-musl/release
 sudo journalctl -u mihomo-web.service -n 50 --no-pager
 ```
 
 程序采用同目录原子重命名替换。上一份程序保存在 `.previous`，但数据库迁移可能不支持降级；回滚程序前同时评估或恢复相应数据库备份。
+
+用户目录或便携模式直接运行的版本，升级只需停止进程、核对新文件的 SHA256 并替换可执行文件；配置和数据的保留方法见 [直接运行](standalone.md)。
 
 ```bash
 sudo systemctl stop mihomo-web.service mihomo-web-helper.service

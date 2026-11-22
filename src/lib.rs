@@ -5,6 +5,7 @@ pub mod config;
 pub mod db;
 pub mod error;
 pub mod helper;
+pub mod licenses;
 pub mod mihomo;
 pub mod runtime;
 pub mod security;

@@ -80,6 +80,7 @@ jobs:
           npm test
       - name: Rust formatting, lint and tests
         run: |
+          python scripts/generate-notices.py
           cargo fmt --all -- --check
           cargo clippy --all-targets --locked -- -D warnings
           cargo test --all-targets --locked

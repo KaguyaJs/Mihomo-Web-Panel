@@ -2,6 +2,14 @@
 
 版本采用语义化版本号；Git 标签使用 `vX.Y.Z`。
 
+## [0.3.0]
+
+- Release 直接提供五个平台的主程序可执行文件和 SHA256SUMS，下载后即可运行。
+- 重写发行文件准备、完整性检查和发布流程；验证实际上传的单个可执行文件。
+- 项目许可、第三方清单和完整许可文本内嵌到程序，使用 `licenses` 命令查看，无需初始化或配置文件。
+- 许可证在编译前按目标平台收集；发行校验拒绝错误架构、额外运行库、私有路径和非预期附件。
+- 更新 Windows / macOS / Linux 的直接下载、执行权限、持久化与升级说明；Linux 完整 systemd/helper 部署从源码构建。
+
 ## [0.2.0]
 
 - 增加解压后直接运行的 Windows x64、macOS Intel / Apple Silicon 和 Linux x64 / ARM64 可执行版本。
@@ -23,3 +31,4 @@
 
 [0.1.0]: https://github.com/KaguyaJs/mihomo-web-panel/releases/tag/v0.1.0
 [0.2.0]: https://github.com/KaguyaJs/mihomo-web-panel/releases/tag/v0.2.0
+[0.3.0]: https://github.com/KaguyaJs/mihomo-web-panel/releases/tag/v0.3.0

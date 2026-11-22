@@ -4,9 +4,10 @@ umask 077
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 project_dir="$(cd -- "$script_dir/.." && pwd)"
-binary_dir="$project_dir"
-# Earlier archives placed the executables in bin/.
-if [[ -d "$project_dir/bin" ]]; then binary_dir="$project_dir/bin"; fi
+binary_dir="$project_dir/target/release"
+# Keep older installation layouts usable when upgrading an existing service.
+if [[ -f "$project_dir/mihomo-web-panel" ]]; then binary_dir="$project_dir"; fi
+if [[ -f "$project_dir/bin/mihomo-web-panel" ]]; then binary_dir="$project_dir/bin"; fi
 origin=""
 
 usage() { printf '%s\n' '用法: sudo bash scripts/install.sh --origin https://panel.example.com [--binary-dir /path/to/bin]'; }

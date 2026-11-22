@@ -13,7 +13,7 @@ sudo ss -lntp
 
 现有 Mihomo Controller 应为 `127.0.0.1:9090` 或 `[::1]:9090`，不是 `0.0.0.0:9090` / `[::]:9090`。由你使用原来的内核配置方式设置 `external-controller` 和强 Secret；本平台不会改动内核。
 
-从 [GitHub Releases](https://github.com/KaguyaJs/mihomo-web-panel/releases/latest) 下载对应 CPU 的发布包和 SHA256SUMS。x86_64 适用于 Intel / AMD 64 位服务器，aarch64 适用于 ARM64 服务器。Release 工作流在对应架构构建并验证文件。
+从 [GitHub Releases](https://github.com/KaguyaJs/mihomo-web-panel/releases/latest) 直接下载对应 CPU 的可执行文件和 SHA256SUMS。x86_64 适用于 Intel / AMD 64 位服务器，aarch64 适用于 ARM64 服务器。Release 工作流在对应架构构建并验证文件。直接运行见 [单文件说明](standalone.md)。本文使用源码中的安装器部署完整 systemd 服务及专用 helper。
 
 ```bash
 sha256sum --ignore-missing -c SHA256SUMS
@@ -31,16 +31,18 @@ dig AAAA panel.example.com
 
 ## 3. 安装平台
 
+按 [安装说明](installation.md) 获取对应源码标签并构建主程序与 helper，然后在该源码目录执行：
+
 ```bash
-tar -xzf mihomo-web-panel-0.2.0-linux-x86_64.tar.gz
-cd mihomo-web-panel-0.2.0-linux-x86_64
-sha256sum -c SHA256SUMS
-sudo bash scripts/install.sh --origin https://panel.example.com
+sudo bash scripts/install.sh --origin https://panel.example.com \
+  --binary-dir target/x86_64-unknown-linux-musl/release
 sudo systemctl is-active mihomo-web.service
 sudo systemctl show mihomo-web.service -p User -p MainPID
 ```
 
 安装器只新增 mihomo-web 账户、平台程序、配置、数据库目录和专用 helper，不调用任何 Mihomo 安装/启动命令。主服务内部监听回环 8787，配置权限为 root:mihomo-web 0640。
+
+ARM64 构建对应 `aarch64-unknown-linux-musl`，安装时使用该目标目录。构建环境需要 Rust、Node.js 和 C 工具链；安装完成后的运行环境只使用编译后的程序。
 
 ## 4. 配置 Caddy
 

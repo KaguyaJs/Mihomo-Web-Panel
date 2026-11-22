@@ -34,6 +34,8 @@ enum Commands {
     ResetWebSettings,
     /// Show the configuration file and private data directory.
     Paths,
+    /// Print the embedded project and third-party license texts.
+    Licenses,
 }
 
 #[tokio::main]
@@ -51,6 +53,10 @@ async fn main() -> anyhow::Result<()> {
     let should_open =
         !args.no_open && (args.open || (standalone && args.command.is_none() && interactive));
     let command = args.command.unwrap_or(Commands::Serve);
+    if matches!(command, Commands::Licenses) {
+        mihomo_web_panel::licenses::write(&mut std::io::stdout().lock())?;
+        return Ok(());
+    }
     #[cfg(unix)]
     if matches!(command, Commands::Serve | Commands::ResetWebSettings) {
         anyhow::ensure!(
@@ -114,6 +120,9 @@ async fn main() -> anyhow::Result<()> {
             return Ok(());
         }
         Commands::Serve => {}
+        Commands::Licenses => {
+            unreachable!("license output is handled without loading configuration")
+        }
     }
     private_dir(&config.data_dir)?;
     let lock = OpenOptions::new()

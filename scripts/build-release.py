@@ -5,10 +5,11 @@ import argparse
 import os
 import runpy
 import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-TARGETS = runpy.run_path(str(ROOT / "scripts/package-release.py"))["TARGETS"]
+TARGETS = runpy.run_path(str(ROOT / "scripts/prepare-release.py"))["TARGETS"]
 
 
 def main() -> None:
@@ -32,6 +33,8 @@ def main() -> None:
         environment[f"CC_{key}"] = "musl-gcc"
         environment[f"CARGO_TARGET_{key.upper()}_LINKER"] = "musl-gcc"
     environment["CARGO_ENCODED_RUSTFLAGS"] = "\x1f".join(flags)
+    subprocess.run([sys.executable, str(ROOT / "scripts/generate-notices.py"), "--target", arguments.target],
+                   cwd=ROOT, env=environment, check=True)
     common = ["--release", "--locked", "--target", arguments.target]
     subprocess.run(["cargo", "build", *common, "--bins", "--examples"], cwd=ROOT, env=environment, check=True)
     if not arguments.skip_tests:
